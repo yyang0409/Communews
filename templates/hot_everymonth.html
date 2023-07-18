@@ -166,28 +166,27 @@
     <!-- end of tabs -->
     </header>
 
+    <div>
+      
+      <ul class="nav nav-pills mx-1 d-flex justify-content-evenly text-center">
+        <li class="nav-item me-1 newest-tab">
+          <a class="nav-link"   href="/hot">當日熱門</a>
+        </li>
+        <li class="nav-item hot-tab">
+          <a class="nav-link "  href="/hot/evevyweek">當週熱門</a>
+        </li>
+        <li class="nav-item hot-tab">
+          <a class="nav-link active" aria-current="page" href="/hot/evevymonth">當月熱門</a>
+        </li>
+      </ul>
+    </div>
     <!-- start of container -->
     <!-- 最新新聞 -->
     <div class="container news-container">
                             
       <div class="row">
-        <!-- 熱門 news -->
-        <form>
-          <p></p>
-          <span class="topic fs-3"># 熱門新聞</span>
-        </form>          
+        <!-- 熱門 news -->         
 
-        <ul class="nav nav-tabs">
-          <li class="nav-item evevyday">
-            <a class="nav-link "  href="/hot">每日</a>
-          </li>
-          <li class="nav-item evevyweek">
-            <a class="nav-link"  href="/hot/evevyweek">每週</a>
-          </li>
-          <li class="nav-item evevymonth">
-            <a class="nav-link active" aria-current="page" href="/hot/evevymonth">每月</a>
-          </li>
-        </ul>
 
           <!-- start of column -->  
           {% for news in news_list %}
