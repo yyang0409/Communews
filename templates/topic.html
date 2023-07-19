@@ -20,6 +20,9 @@
 
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- JQuery -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
 </head>
 
 <body>
@@ -142,29 +145,30 @@
         <p class="line"></p>
       </li>
       <li class="nav-item mx-1">
-        <a class="nav-link" href="/topic/運動">運動</a>
+        <a class="nav-link topic-tab" href="/topic/運動">運動</a>
       </li>
       <li class="nav-item mx-1">
-        <a class="nav-link" href="/topic/生活">生活</a>
+        <a class="nav-link topic-tab" href="/topic/生活">生活</a>
       </li>
       <li class="nav-item mx-1">
-        <a class="nav-link" href="/topic/國際">國際</a>
+        <a class="nav-link topic-tab" href="/topic/國際">國際</a>
       </li>
       <li class="nav-item mx-1">
-        <a class="nav-link" href="/topic/娛樂">娛樂</a>
+        <a class="nav-link topic-tab" href="/topic/娛樂">娛樂</a>
       </li>
       <li class="nav-item mx-1">
-        <a class="nav-link" href="/topic/社會地方">社會地方</a>
+        <a class="nav-link topic-tab" href="/topic/社會地方">社會地方</a>
       </li>
       <li class="nav-item mx-1">
-        <a class="nav-link" href="/topic/科技">科技</a>
+        <a class="nav-link topic-tab" href="/topic/科技">科技</a>
       </li>
       <li class="nav-item mx-1">
-        <a class="nav-link" href="/topic/健康">健康</a>
+        <a class="nav-link topic-tab" href="/topic/健康">健康</a>
       </li>
       <li class="nav-item mx-1">
-        <a class="nav-link" href="/topic/財經">財經</a>
+        <a class="nav-link topic-tab" href="/topic/財經">財經</a>
       </li>
+
 
     </ul>
     <!-- end of tabs -->
@@ -176,7 +180,7 @@
     <div class="container news-container">                 
       <div class="row">
         
-        <p class="topic fs-2 mt-2"># {{topicname}}新聞</p>
+        <p class="topic fs-2 mt-2"># <span class="topic">{{topicname}}</span>新聞</p>
 
         <ul class="nav nav-pills mx-1 d-flex justify-content-evenly text-center mb-4">
           <li class="nav-item me-2 newest-tab">
