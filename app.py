@@ -293,7 +293,7 @@ def topic_hot_week(topicname):
 
 @app.route("/topic/<topicname>/熱門/當月")
 def topic_hot_month(topicname):
-    return render_template('topic_hot_week.html',topicname=topicname)
+    return render_template('topic_hot_month.html',topicname=topicname)
 
 # 啟動網站伺服器
 if __name__ == '__main__':
