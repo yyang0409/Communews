@@ -5,7 +5,7 @@ function getRating(){
         let stars = document.getElementsByName(rate[i].dataset.id)
         // console.log(stars)
         let ratingResult = document.getElementById(rate[i].dataset.id)
-        // console.log(ratingResult)
+        console.log(ratingResult)
         printRatingResult(ratingResult);
 
         stars.forEach((star,index1)=> {
@@ -67,19 +67,9 @@ function listenforLike(){
        
 } // end of listenforLike
 
-//   會反白現在是在哪個主題 
-function focuspage(){
-    var topicname = $("span.topic").text()
-    var topictabs = document.querySelectorAll(".topic-tab")
 
-    topictabs.forEach((tab) =>{
-    if(tab.textContent == topicname){
-        tab.classList.add('active')
-    }      
-    })
-}
 
   
-focuspage();
+
 listenforLike();
 getRating();
