@@ -194,14 +194,12 @@
 
         <!-- 下拉式選單 -->
         <div class="dropdown mt-2">
-          <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Dropdown button
-          </button>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="/topic/{{topicname}}/熱門">當日熱門</a></li>
-            <li><a class="dropdown-item" href="/topic/{{topicname}}/熱門/當週">當週熱門</a></li>
-            <li><a class="dropdown-item" href="/topic/{{topicname}}/熱門/當月">當月熱門</a></li>
-          </ul>
+          <select  id="dropdown" class="select-hottime info-select" onchange="select();">
+              <option value="/topic/{{topicname}}/熱門" >當日熱門</option>
+              <option value="/topic/{{topicname}}/熱門/當週" selected="selected">當週熱門</option>
+              <option value="/topic/{{topicname}}/熱門/當月">當月熱門</option>
+          </select>
+          <div id="show"></div>
         </div>
           
           <!-- start of column -->  
@@ -296,6 +294,21 @@
   <!-- Bootstrap js -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
   <script src="{{url_for('static',filename='js/index.js')}}" defer></script>
+  <script>
+    // Function to handle the page transfer when an option is selected
+    function handleDropdownChange() {
+      var selectedValue = document.getElementById("dropdown").value;
+
+      // Check if a valid option is selected
+      if (selectedValue !== "") {
+        // Redirect to the selected page
+        window.location.href = selectedValue;
+      }
+    }
+
+    // Add an event listener to the dropdown to trigger the page transfer on change
+    document.getElementById("dropdown").addEventListener("change", handleDropdownChange);
+  </script>
 </body>
 
 </html>
