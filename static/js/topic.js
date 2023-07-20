@@ -1,6 +1,6 @@
 //   會反白現在是在哪個主題 
 function focuspage(){
-    var topicname = $("span.topic").text()
+    var topicname = $("span.topicname").text()
     var topictabs = document.querySelectorAll(".topic-tab")
 
     topictabs.forEach((tab) =>{
