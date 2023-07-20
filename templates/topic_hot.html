@@ -20,6 +20,9 @@
 
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- JQuery -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
 </head>
 
 <body>
@@ -142,28 +145,28 @@
         <p class="line"></p>
       </li>
       <li class="nav-item mx-1">
-        <a class="nav-link" href="/topic/運動">運動</a>
+        <a class="nav-link topic-tab" href="/topic/運動">運動</a>
       </li>
       <li class="nav-item mx-1">
-        <a class="nav-link" href="/topic/生活">生活</a>
+        <a class="nav-link topic-tab" href="/topic/生活">生活</a>
       </li>
       <li class="nav-item mx-1">
-        <a class="nav-link" href="/topic/國際">國際</a>
+        <a class="nav-link topic-tab" href="/topic/國際">國際</a>
       </li>
       <li class="nav-item mx-1">
-        <a class="nav-link" href="/topic/娛樂">娛樂</a>
+        <a class="nav-link topic-tab" href="/topic/娛樂">娛樂</a>
       </li>
       <li class="nav-item mx-1">
-        <a class="nav-link" href="/topic/社會地方">社會地方</a>
+        <a class="nav-link topic-tab" href="/topic/社會地方">社會地方</a>
       </li>
       <li class="nav-item mx-1">
-        <a class="nav-link" href="/topic/科技">科技</a>
+        <a class="nav-link topic-tab" href="/topic/科技">科技</a>
       </li>
       <li class="nav-item mx-1">
-        <a class="nav-link" href="/topic/健康">健康</a>
+        <a class="nav-link topic-tab" href="/topic/健康">健康</a>
       </li>
       <li class="nav-item mx-1">
-        <a class="nav-link" href="/topic/財經">財經</a>
+        <a class="nav-link topic-tab" href="/topic/財經">財經</a>
       </li>
 
     </ul>
@@ -177,7 +180,7 @@
     <div class="container news-container">                 
       <div class="row">
         
-        <p class="topic fs-2 mt-2"># {{topicname}}新聞</p>
+        <p class="fs-2 mt-2"># <span class="topic">{{topicname}}</span>新聞</p>
 
         <ul class="nav nav-pills mx-1 d-flex justify-content-evenly text-center">
           <li class="nav-item me-1 newest-tab">
@@ -189,12 +192,14 @@
         </ul>
 
         <!-- 下拉式選單 -->
+        
         <div class="dropdown mt-2">
-            <select  class="select-hottime info-select">
-                <option value="1" selected="selected">當日熱門</option>
-                <option value="2">當週熱門</option>
-                <option value="3">當月熱門</option>
+            <select  id="dropdown" class="select-hottime info-select" onchange="select();">
+                <option value="/topic/{{topicname}}/熱門" selected="selected">當日熱門</option>
+                <option value="/topic/{{topicname}}/熱門/當週">當週熱門</option>
+                <option value="/topic/{{topicname}}/熱門/當月">當月熱門</option>
             </select>
+            <div id="show"></div>
         </div>
           
           <!-- start of column -->  
@@ -236,7 +241,7 @@
                     <p class="star" name="{{news._id}}">&#9734;</p>
                     <p class="star" name="{{news._id}}">&#9734;</p>
                     <span class="stars-score" id="{{news._id}}"></span>
-                    
+                  </form>  
                     <!-- Modal -->
                     <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                       <div class="modal-dialog modal-dialog-centered">
@@ -289,6 +294,22 @@
   <!-- Bootstrap js -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
   <script src="{{url_for('static',filename='js/index.js')}}" defer></script>
+  <script>
+    // Function to handle the page transfer when an option is selected
+    function handleDropdownChange() {
+      var selectedValue = document.getElementById("dropdown").value;
+
+      // Check if a valid option is selected
+      if (selectedValue !== "") {
+        // Redirect to the selected page
+        window.location.href = selectedValue;
+      }
+    }
+
+    // Add an event listener to the dropdown to trigger the page transfer on change
+    document.getElementById("dropdown").addEventListener("change", handleDropdownChange);
+  </script>
+
 </body>
 
 </html>
