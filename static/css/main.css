@@ -152,6 +152,7 @@ header{
     border-radius:none;
 }
 
+.newest-tab,
 .hot-tab
 {
     flex-grow: 1;
