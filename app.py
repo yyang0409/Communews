@@ -295,6 +295,17 @@ def topic_hot_week(topicname):
 def topic_hot_month(topicname):
     return render_template('topic_hot_month.html',topicname=topicname)
 
+# 處理收藏關鍵字的下拉式選單
+@app.route("/process_value", methods=["POST"])
+def process_value():
+    selected_value = request.form.get("selectedValue")
+    # Do whatever processing you need with the selected_value
+    # For example, you can perform database operations or business logic.
+    # Replace the following line with the desired processing.
+    result = f"Received selected value: {selected_value}"
+    return jsonify(result)
+
+
 # 啟動網站伺服器
 if __name__ == '__main__':
     app.run(debug=True)

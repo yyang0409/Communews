@@ -68,8 +68,5 @@ function listenforLike(){
 } // end of listenforLike
 
 
-
-  
-
 listenforLike();
 getRating();
