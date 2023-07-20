@@ -135,6 +135,9 @@ header{
 .nav-pills .nav-link{
     color: black;
     background-color: #E5E7E9;
+    /* flex-grow: 1; */
+    border: 2px solid #fff;
+    border-radius: 6px;
 }
 
 .nav-pills .nav-link:hover{
@@ -145,6 +148,8 @@ header{
 .nav-pills .nav-link.active
 {
     background-color: #526D82;
+    border: none;
+    border-radius:none;
 }
 
 .newest-tab,
@@ -182,10 +187,6 @@ header{
     font-size: 1.2rem;
 }
 
-/* dropdown */
-.dropdown {
-    
-}
 
 /* news content */
 .news-container{
