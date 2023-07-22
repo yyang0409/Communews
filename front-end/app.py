@@ -322,17 +322,110 @@ def topic(topicname):
     return render_template('topic.html',topicname=topicname,news_list=news_list,user=g.user)
 
 # topic的熱門新聞頁面
-@app.route("/topic/<topicname>/熱門")
+@app.route("/topic/<topicname>/熱門", methods=['GET','POST'])
 def topicHot(topicname):
-    return render_template('topic_hot.html',topicname=topicname,user=g.user)
+    like_status_dict={}
+    if request.method == 'GET':
+        data=hot_topic_search_news(topicname,'daily')
+        like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in data.keys()}
+        return render_template('topic_hot.html',topicname=topicname, data=data,like_status_dict=like_status_dict,user=g.user)
+    elif request.method == 'POST':
+        db = connect_db()
+        cursor = db.cursor()
+        data_id = request.form.get('data_id')
+        ISLIKE = request.form.get('like_status')
+        if ISLIKE == 'Y' :
+            if collection_loader(data_id)[1] =="Y":
+                sql_insert = "UPDATE tb_collection_record SET islike =%s ,date=%s WHERE id_user = %s AND id_keyword=%s "
+                data = (ISLIKE,(dt.date.today().strftime("%Y-%m-%d")),current_user.user_id, kw_loader(data_id))
+            else:
+                sql_insert = "INSERT INTO tb_collection_record (id_user,id_keyword,islike,rating,date) VALUES (%s,%s,%s,%s,%s)"
+                data = (current_user.user_id, kw_loader(data_id), ISLIKE, 5, (dt.date.today().strftime("%Y-%m-%d")))
 
-@app.route("/topic/<topicname>/熱門/當週")
+            cursor.execute(sql_insert, data)
+            # 提交變更
+            db.commit()
+        elif ISLIKE == 'N' :
+            sql_insert = "UPDATE tb_collection_record SET islike =%s ,date=%s WHERE id_user = %s AND id_keyword=%s "
+            data = (ISLIKE,(dt.date.today().strftime("%Y-%m-%d")),current_user.user_id, kw_loader(data_id))
+            cursor.execute(sql_insert, data)
+            # 提交變更
+            db.commit()
+        # 回傳JSON格式的回應給前端
+        return jsonify({'message': '成功接收data_id！', 'data_id': data_id,'ISLIKE':ISLIKE})
+    else:
+        # 在其他情況下也要處理返回有效的回應
+        return "Invalid request method"
+
+@app.route("/topic/<topicname>/熱門/當週", methods=['GET','POST'])
 def topic_hot_week(topicname):
-    return render_template('topic_hot_week.html',topicname=topicname,user=g.user)
+    like_status_dict={}
+    if request.method == 'GET':
+        data=hot_topic_search_news(topicname,'weekly')
+        like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in data.keys()}
+        return render_template('topic_hot_week.html',topicname=topicname, data=data,like_status_dict=like_status_dict,user=g.user)
+    elif request.method == 'POST':
+        db = connect_db()
+        cursor = db.cursor()
+        data_id = request.form.get('data_id')
+        ISLIKE = request.form.get('like_status')
+        if ISLIKE == 'Y' :
+            if collection_loader(data_id)[1] =="Y":
+                sql_insert = "UPDATE tb_collection_record SET islike =%s ,date=%s WHERE id_user = %s AND id_keyword=%s "
+                data = (ISLIKE,(dt.date.today().strftime("%Y-%m-%d")),current_user.user_id, kw_loader(data_id))
+            else:
+                sql_insert = "INSERT INTO tb_collection_record (id_user,id_keyword,islike,rating,date) VALUES (%s,%s,%s,%s,%s)"
+                data = (current_user.user_id, kw_loader(data_id), ISLIKE, 5, (dt.date.today().strftime("%Y-%m-%d")))
 
-@app.route("/topic/<topicname>/熱門/當月")
+            cursor.execute(sql_insert, data)
+            # 提交變更
+            db.commit()
+        elif ISLIKE == 'N' :
+            sql_insert = "UPDATE tb_collection_record SET islike =%s ,date=%s WHERE id_user = %s AND id_keyword=%s "
+            data = (ISLIKE,(dt.date.today().strftime("%Y-%m-%d")),current_user.user_id, kw_loader(data_id))
+            cursor.execute(sql_insert, data)
+            # 提交變更
+            db.commit()
+        # 回傳JSON格式的回應給前端
+        return jsonify({'message': '成功接收data_id！', 'data_id': data_id,'ISLIKE':ISLIKE})
+    else:
+        # 在其他情況下也要處理返回有效的回應
+        return "Invalid request method"
+
+@app.route("/topic/<topicname>/熱門/當月", methods=['GET','POST'])
 def topic_hot_month(topicname):
-    return render_template('topic_hot_month.html',topicname=topicname,user=g.user)
+    like_status_dict={}
+    if request.method == 'GET':
+        data=hot_topic_search_news(topicname,'monthly')
+        like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in data.keys()}
+        return render_template('topic_hot_month.html',topicname=topicname, data=data,like_status_dict=like_status_dict,user=g.user)
+    elif request.method == 'POST':
+        db = connect_db()
+        cursor = db.cursor()
+        data_id = request.form.get('data_id')
+        ISLIKE = request.form.get('like_status')
+        if ISLIKE == 'Y' :
+            if collection_loader(data_id)[1] =="Y":
+                sql_insert = "UPDATE tb_collection_record SET islike =%s ,date=%s WHERE id_user = %s AND id_keyword=%s "
+                data = (ISLIKE,(dt.date.today().strftime("%Y-%m-%d")),current_user.user_id, kw_loader(data_id))
+            else:
+                sql_insert = "INSERT INTO tb_collection_record (id_user,id_keyword,islike,rating,date) VALUES (%s,%s,%s,%s,%s)"
+                data = (current_user.user_id, kw_loader(data_id), ISLIKE, 5, (dt.date.today().strftime("%Y-%m-%d")))
+
+            cursor.execute(sql_insert, data)
+            # 提交變更
+            db.commit()
+        elif ISLIKE == 'N' :
+            sql_insert = "UPDATE tb_collection_record SET islike =%s ,date=%s WHERE id_user = %s AND id_keyword=%s "
+            data = (ISLIKE,(dt.date.today().strftime("%Y-%m-%d")),current_user.user_id, kw_loader(data_id))
+            cursor.execute(sql_insert, data)
+            # 提交變更
+            db.commit()
+        # 回傳JSON格式的回應給前端
+        return jsonify({'message': '成功接收data_id！', 'data_id': data_id,'ISLIKE':ISLIKE})
+    else:
+        # 在其他情況下也要處理返回有效的回應
+        return "Invalid request method"
 
 @app.route("/recommendation")
 #@login_required
