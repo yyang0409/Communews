@@ -1,7 +1,7 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from flask import Flask,render_template,url_for,redirect,request, flash,session
+from flask import Flask,render_template,url_for,redirect,request, flash,session,g
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import pymongo
@@ -51,32 +51,25 @@ def user_loader(user_id):
         return user
     return None
 
+@app.before_request
+def before_request():
+    g.user = current_user
 
 # 建立資料庫連接
 def connect_db():
     db_settings = {
-        "host": "finalproject.cluster-cnfzqwsf4fd2.ap-southeast-2.rds.amazonaws.com",
-        "port": 3306,
-        "user": "ncumis",
-        "password": "ncumis12345",
-        "db": "Final_Project",
-        "charset": "utf8mb4",
-        "cursorclass": pymysql.cursors.DictCursor
-    }
+            "host": "127.0.0.1",
+            "port": 3306,
+            "user": "root",
+            "password": "109403502",
+            "db": "communews",
+            "charset": "utf8mb4",
+            "cursorclass": pymysql.cursors.DictCursor
+        }
     connection = pymysql.connect(**db_settings)
     return connection
 
-def get_DB_News_data(topic,num):
-    db = myclient['News']
-    collection = db[topic]
 
-    pipeline = [
-        {"$sort": {"timestamp": -1}},
-        {"$limit": num}
-    ]
-
-    data = collection.aggregate(pipeline)
-    return list(data)
 
 
 # 建立網站首頁的回應方式
@@ -97,66 +90,72 @@ def index():
     # 按照timestamp字段排序
     sorted_data = sorted(combined_data, key=lambda x: x['timestamp'], reverse=True)
 
-    return render_template('newest.html', news_list=sorted_data)
+    return render_template('newest.html', news_list=sorted_data,user=g.user)
 
-
-@app.route("/newest")
-def newest():
-    topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經"]
-
-    combined_data = []
-    # 使用线程池并行处理获取数据
-    with ThreadPoolExecutor() as executor:
-        # 并行获取各个主题的数据
-        futures = [executor.submit(get_DB_News_data, topic,50) for topic in topics]
-
-        # 收集各个主题的数据
-        for future in futures:
-            combined_data.extend(future.result())
-
-    # 按照timestamp字段排序
-    sorted_data = sorted(combined_data, key=lambda x: x['timestamp'], reverse=True)
-
-    return render_template('newest.html', news_list=sorted_data)
-
-def get_DB_KW_data(topic):
-    db = myclient['關鍵每一天']
-    collection = db[topic]
-    today_date =datetime.now().strftime("%Y-%m-%d")
-    pipeline = [
-        {"$match": {"date": today_date}}
-    ]
-
-    data = collection.aggregate(pipeline)
-    return list(data)
 
 @app.route("/hot")
 def hot():
-    result = get_DB_KW_data("綜合全部")
-    data = [{'keyword': keyword, 'news_list': search_total_news([keyword],10)} for item in result for keyword in item['keywords']]
-    return render_template('hot.html', data=data)
+    data =hot_all_search_news("daily")
+    return render_template('hot.html', data=data,user=g.user)
 
 # 熱門頁面-每週
 @app.route("/hot/evevyweek")
 def evevyweek():
-    return render_template('hot_everyweek.html')
+    data =hot_all_search_news("weekly")
+    return render_template('hot_everyweek.html', data=data,user=g.user)
 
 # 熱門頁面-每月
 @app.route("/hot/evevymonth")
 def evevymonth():
-    return render_template('hot_everymonth.html')
+    data =hot_all_search_news("monthly")
+    return render_template('hot_everymonth.html', data=data,user=g.user)
 
+@app.route("/show",  methods=['POST'])
+def show():
+    if request.method == 'POST':
+        combined_data = {}
+        keyword = request.form.get("keyword", "")
+        data =kw_search_news(keyword)
+        combined_data.update(data)
+        extend_keywords=word2vec(keyword)
+        if extend_keywords!="None":
+            for extend_keyword in extend_keywords:
+                extend_data=kw_search_news(extend_keyword)
+                combined_data.update(extend_data)
+        return render_template('show.html',combined_data=combined_data,user=g.user)
+    
+    return redirect(url_for('index'))  
+
+
+# topic頁面預設是最新新聞
+@app.route("/topic/<topicname>")
+def topic(topicname):
+    news_list=get_DB_News_data(topicname,100)
+    return render_template('topic.html',topicname=topicname,news_list=news_list,user=g.user)
+
+# topic的熱門新聞頁面
+@app.route("/topic/<topicname>/熱門")
+def topicHot(topicname):
+    return render_template('topic_hot.html',topicname=topicname,user=g.user)
+
+@app.route("/topic/<topicname>/熱門/當週")
+def topic_hot_week(topicname):
+    return render_template('topic_hot_week.html',topicname=topicname,user=g.user)
+
+@app.route("/topic/<topicname>/熱門/當月")
+def topic_hot_month(topicname):
+    return render_template('topic_hot_month.html',topicname=topicname,user=g.user)
 
 @app.route("/recommendation")
-@login_required
+#@login_required
 def recommendation():
-    return render_template('recommendation.html')
+    return render_template('recommendation.html',user=g.user)
 
 
 @app.route("/collection")
 # @login_required
 def collection():
-    return render_template('collection.html')
+    return render_template('collection.html',user=g.user)
 
 
 @app.route("/login",methods=['GET','POST'])
@@ -170,7 +169,7 @@ def login():
         # 查询数据库以获取用户
         cursor = db.cursor()
         query = "SELECT * FROM tb_user WHERE email = %s"
-        cursor.execute(query, (input_email,))
+        cursor.execute(query, (input_email))
         result = cursor.fetchone()
 
         # 验证邮箱和密码
@@ -179,10 +178,10 @@ def login():
             user = User(result['email'], result['password'])
             login_user(user)  # 登录用户
             flash('Login success.')
-            return redirect(url_for('afterlogin'))  # 重定向到主页
-
-        flash('Invalid email or password.')  # 如果验证失败，显示错误消息
-        return redirect(url_for('login'))  # 重定向回登录页
+            return redirect(url_for('index'))  # 重定向到主页
+        else:
+            flash('Invalid email or password.')  # 如果验证失败，显示错误消息
+            return redirect(url_for('login'))  # 重定向回登录页
 
     return render_template('login.html')
 
@@ -223,30 +222,6 @@ def register():
 
     return render_template('register.html')
 
-@app.route("/index_login")
-@login_required
-def afterlogin():
-    db = myclient["News"]
-    topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經"]
-    news_data = []
-    for topic in topics:
-        collection = db[topic]
-        collection.create_index([("date", -1)])
-
-        pipeline = [
-            {"$match": {"date": "20230709", "topic": topic}},
-            {"$sample": {"size": 2}}
-        ]
-
-        topic_news = list(collection.aggregate(pipeline))
-        news_data.append({"topic": topic, "news_list": topic_news})
-
-    return render_template('index_login.html', news_data=news_data)
-
-@app.route("/login_hot")
-@login_required
-def login_hot():
-    return render_template('login_hot.html')
 
 @app.route("/logout")
 @login_required
@@ -262,38 +237,6 @@ def logout():
 
     # 重定向到登录页或其他页面
     return redirect(url_for('login'))
-
-@app.route("/show",  methods=['POST'])
-def show():
-    if request.method == 'POST':
-        keyword = request.form.get("keyword", "")
-        data = [{'keyword': keyword, 'news_list': gen_kw_search_news([keyword], 10)}]
-        extend_keywords=word2vec(keyword)
-        extend_data=[{'keyword': extend_keyword, 'news_list': gen_kw_search_news([extend_keyword], 10)} for extend_keyword in extend_keywords]
-        return render_template('show.html', data=data,extend_data=extend_data)
-    
-    return redirect(url_for('index'))  
-
-
-# topic頁面預設是最新新聞
-@app.route("/topic/<topicname>")
-def topic(topicname):
-    news_list=get_DB_News_data(topicname,100)
-    return render_template('topic.html',topicname=topicname,news_list=news_list)
-
-# topic的熱門新聞頁面
-@app.route("/topic/<topicname>/熱門")
-def topicHot(topicname):
-    news_list=hot_topic_search_news(topicname)
-    return render_template('topic_hot.html',topicname=topicname,news_list=news_list)
-
-@app.route("/topic/<topicname>/熱門/當週")
-def topic_hot_week(topicname):
-    return render_template('topic_hot_week.html',topicname=topicname)
-
-@app.route("/topic/<topicname>/熱門/當月")
-def topic_hot_month(topicname):
-    return render_template('topic_hot_month.html',topicname=topicname)
 
 # 處理收藏關鍵字的下拉式選單
 @app.route("/process_value", methods=["POST"])
