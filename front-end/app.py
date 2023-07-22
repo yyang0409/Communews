@@ -1,6 +1,6 @@
 
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+import datetime as dt  # 將 datetime 模組重新命名為 'dt' 來避免衝突
 from flask import Flask,render_template,url_for,redirect,request, flash,session,g
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -13,48 +13,8 @@ import pymysql
 from authlib.integrations.flask_client import OAuth
 from search_news import *
 from word2vec import *
+
 myclient = pymongo.MongoClient("mongodb+srv://user1:user1@cluster0.ronm576.mongodb.net/?retryWrites=true&w=majority")
-
-app = Flask( 
-    __name__,
-    static_folder='static',
-    static_url_path='/'
-)
-#  會使用到session，故為必設
-app.secret_key = 'NCUMIS' 
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-
-class User(UserMixin):
-    def __init__(self, email, password):
-        self.email = email
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
-    def get_id(self):
-        return self.email  
-    
-@login_manager.user_loader  
-def user_loader(user_id):  
-    db = connect_db()
-    cursor = db.cursor()
-    query = "SELECT * FROM tb_user WHERE email = %s"
-    cursor.execute(query, (user_id,))
-    result = cursor.fetchone()
-    if result:
-        email = result['email']
-        password = result['password']
-        user = User(email, password)
-        return user
-    return None
-
-@app.before_request
-def before_request():
-    g.user = current_user
-
 # 建立資料庫連接
 def connect_db():
     db_settings = {
@@ -70,6 +30,111 @@ def connect_db():
     return connection
 
 
+app = Flask( 
+    __name__,
+    static_folder='static',
+    static_url_path='/'
+)
+#  會使用到session，故為必設
+app.secret_key = 'NCUMIS' 
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+class User(UserMixin):
+    def __init__(self,user_id, email, password):
+        self.user_id = user_id
+        self.email = email
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    
+    def get_id(self):
+        return self.user_id
+
+@app.before_request
+def before_request():
+    g.user = current_user
+
+@login_manager.user_loader  
+def user_loader(user_id):  
+    db = connect_db()
+    cursor = db.cursor()
+    query = "SELECT * FROM tb_user WHERE id_user = %s"
+    cursor.execute(query, (user_id))
+    result = cursor.fetchone()
+    if result:
+        user_id = result['id_user']
+        email = result['email']
+        password = result['password']
+        user = User(user_id,email, password)
+        return user
+    return None
+
+@app.route("/login",methods=['GET','POST'])
+def login():
+    db = connect_db()
+    if request.method == 'POST':
+        # 获取表单数据
+        input_email = request.form['email']
+        input_password = request.form['password']
+
+        # 查询数据库以获取用户
+        cursor = db.cursor()
+        query = "SELECT * FROM tb_user WHERE email = %s"
+        cursor.execute(query, (input_email))
+        result = cursor.fetchone()
+
+        # 验证邮箱和密码
+        if result and check_password_hash(result['password'], input_password):
+            # 构造 User 对象
+            user = User(result['id_user'],result['email'], result['password'])
+            login_user(user)  # 登录用户
+            flash('Login success.')
+            return redirect(url_for('index'))  # 重定向到主页
+        else:
+            flash('Invalid email or password.')  # 如果验证失败，显示错误消息
+            return redirect(url_for('login'))  # 重定向回登录页
+
+    return render_template('login.html')
+
+
+@app.route("/register",methods=['GET','POST'])
+def register():
+    db = connect_db()
+    if request.method == 'POST':
+        # 获取表单数据
+        input_email = request.form['email']
+        input_password = request.form['password']
+        input_repeat_password = request.form['password-repeat']
+
+        # 验证输入
+        if input_password != input_repeat_password:
+            flash('Two passwords are different.')
+            return redirect(url_for('register'))
+
+        # 检查是否已注册
+        cursor = db.cursor()
+        query = "SELECT * FROM tb_user WHERE email = %s"
+        cursor.execute(query, (input_email,))
+        result = cursor.fetchone()
+        if result:
+            flash('Email has already been registered.')
+            return redirect(url_for('register'))
+
+        # 生成密码哈希值
+        password_hash = generate_password_hash(input_password)
+
+        # 执行插入操作
+        query = "INSERT INTO tb_user (email, password) VALUES (%s, %s)"
+        cursor.execute(query, (input_email, password_hash))
+        db.commit()
+
+        flash("Thank you for registering.")
+        return redirect(url_for('login'))
+
+    return render_template('register.html')
 
 
 # 建立網站首頁的回應方式
@@ -92,23 +157,146 @@ def index():
 
     return render_template('newest.html', news_list=sorted_data,user=g.user)
 
+def kw_loader(kw):  
+    db = connect_db()
+    cursor = db.cursor()
+    query = "SELECT * FROM tb_keyword WHERE value = %s"
+    cursor.execute(query, kw)
+    result = cursor.fetchone()
+    if result:
+        kw_id = result['id_keyword']
+        return kw_id
+    else:
+        sql_insert = "INSERT INTO tb_keyword (value) VALUES (%s)"
+        data = (kw)
+        cursor.execute(sql_insert, data)
+        # 提交變更
+        db.commit()
+        return kw_loader(kw)
+    
+def collection_loader(kw):  
+    id_keyword=kw_loader(kw)
+    db = connect_db()
+    cursor = db.cursor()
+    query = "SELECT * FROM tb_collection_record WHERE id_keyword = %s AND id_user=%s"
+    cursor.execute(query, (id_keyword,current_user.user_id))
+    result = cursor.fetchone()
+    if result:
+        have = 'Y'
+        ISLIKE = result['islike']
+        return ISLIKE,have
+    else:
+        have = 'N'
+        ISLIKE = 'N'
+        return ISLIKE,have
 
-@app.route("/hot")
+@app.route("/hot", methods=['GET','POST'])
 def hot():
-    data =hot_all_search_news("daily")
-    return render_template('hot.html', data=data,user=g.user)
+    like_status_dict={}
+    if request.method == 'GET':
+        data =hot_all_search_news("daily")
+        like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in data.keys()}
+        return render_template('hot.html', data=data,like_status_dict=like_status_dict,user=g.user)
+    elif request.method == 'POST':
+        db = connect_db()
+        cursor = db.cursor()
+        data_id = request.form.get('data_id')
+        ISLIKE = request.form.get('like_status')
+        if ISLIKE == 'Y' :
+            if collection_loader(data_id)[1] =="Y":
+                sql_insert = "UPDATE tb_collection_record SET islike =%s ,date=%s WHERE id_user = %s AND id_keyword=%s "
+                data = (ISLIKE,(dt.date.today().strftime("%Y-%m-%d")),current_user.user_id, kw_loader(data_id))
+            else:
+                sql_insert = "INSERT INTO tb_collection_record (id_user,id_keyword,islike,rating,date) VALUES (%s,%s,%s,%s,%s)"
+                data = (current_user.user_id, kw_loader(data_id), ISLIKE, 5, (dt.date.today().strftime("%Y-%m-%d")))
+
+            cursor.execute(sql_insert, data)
+            # 提交變更
+            db.commit()
+        elif ISLIKE == 'N' :
+            sql_insert = "UPDATE tb_collection_record SET islike =%s ,date=%s WHERE id_user = %s AND id_keyword=%s "
+            data = (ISLIKE,(dt.date.today().strftime("%Y-%m-%d")),current_user.user_id, kw_loader(data_id))
+            cursor.execute(sql_insert, data)
+            # 提交變更
+            db.commit()
+        # 回傳JSON格式的回應給前端
+        return jsonify({'message': '成功接收data_id！', 'data_id': data_id,'ISLIKE':ISLIKE})
+    else:
+        # 在其他情況下也要處理返回有效的回應
+        return "Invalid request method"
 
 # 熱門頁面-每週
-@app.route("/hot/evevyweek")
+@app.route("/hot/evevyweek", methods=['GET','POST'])
 def evevyweek():
-    data =hot_all_search_news("weekly")
-    return render_template('hot_everyweek.html', data=data,user=g.user)
+    like_status_dict={}
+    if request.method == 'GET':
+        data =hot_all_search_news("weekly")
+        like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in data.keys()}
+        return render_template('hot_everyweek.html', data=data,like_status_dict=like_status_dict,user=g.user)
+    elif request.method == 'POST':
+        db = connect_db()
+        cursor = db.cursor()
+        data_id = request.form.get('data_id')
+        ISLIKE = request.form.get('like_status')
+        if ISLIKE == 'Y' :
+            if collection_loader(data_id)[1] =="Y":
+                sql_insert = "UPDATE tb_collection_record SET islike =%s ,date=%s WHERE id_user = %s AND id_keyword=%s "
+                data = (ISLIKE,(dt.date.today().strftime("%Y-%m-%d")),current_user.user_id, kw_loader(data_id))
+            else:
+                sql_insert = "INSERT INTO tb_collection_record (id_user,id_keyword,islike,rating,date) VALUES (%s,%s,%s,%s,%s)"
+                data = (current_user.user_id, kw_loader(data_id), ISLIKE, 5, (dt.date.today().strftime("%Y-%m-%d")))
+
+            cursor.execute(sql_insert, data)
+            # 提交變更
+            db.commit()
+        elif ISLIKE == 'N' :
+            sql_insert = "UPDATE tb_collection_record SET islike =%s ,date=%s WHERE id_user = %s AND id_keyword=%s "
+            data = (ISLIKE,(dt.date.today().strftime("%Y-%m-%d")),current_user.user_id, kw_loader(data_id))
+            cursor.execute(sql_insert, data)
+            # 提交變更
+            db.commit()
+        # 回傳JSON格式的回應給前端
+        return jsonify({'message': '成功接收data_id！', 'data_id': data_id,'ISLIKE':ISLIKE})
+    else:
+        # 在其他情況下也要處理返回有效的回應
+        return "Invalid request method"
 
 # 熱門頁面-每月
-@app.route("/hot/evevymonth")
+@app.route("/hot/evevymonth", methods=['GET','POST'])
 def evevymonth():
-    data =hot_all_search_news("monthly")
-    return render_template('hot_everymonth.html', data=data,user=g.user)
+    like_status_dict={}
+    if request.method == 'GET':
+        data =hot_all_search_news("monthly")
+        like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in data.keys()}
+        return render_template('hot_everymonth.html', data=data,like_status_dict=like_status_dict,user=g.user)
+    elif request.method == 'POST':
+        db = connect_db()
+        cursor = db.cursor()
+        data_id = request.form.get('data_id')
+        ISLIKE = request.form.get('like_status')
+        if ISLIKE == 'Y' :
+            if collection_loader(data_id)[1] =="Y":
+                sql_insert = "UPDATE tb_collection_record SET islike =%s ,date=%s WHERE id_user = %s AND id_keyword=%s "
+                data = (ISLIKE,(dt.date.today().strftime("%Y-%m-%d")),current_user.user_id, kw_loader(data_id))
+            else:
+                sql_insert = "INSERT INTO tb_collection_record (id_user,id_keyword,islike,rating,date) VALUES (%s,%s,%s,%s,%s)"
+                data = (current_user.user_id, kw_loader(data_id), ISLIKE, 5, (dt.date.today().strftime("%Y-%m-%d")))
+
+            cursor.execute(sql_insert, data)
+            # 提交變更
+            db.commit()
+        elif ISLIKE == 'N' :
+            sql_insert = "UPDATE tb_collection_record SET islike =%s ,date=%s WHERE id_user = %s AND id_keyword=%s "
+            data = (ISLIKE,(dt.date.today().strftime("%Y-%m-%d")),current_user.user_id, kw_loader(data_id))
+            cursor.execute(sql_insert, data)
+            # 提交變更
+            db.commit()
+        # 回傳JSON格式的回應給前端
+        return jsonify({'message': '成功接收data_id！', 'data_id': data_id,'ISLIKE':ISLIKE})
+    else:
+        # 在其他情況下也要處理返回有效的回應
+        return "Invalid request method"
+
 
 @app.route("/show",  methods=['POST'])
 def show():
@@ -156,71 +344,6 @@ def recommendation():
 # @login_required
 def collection():
     return render_template('collection.html',user=g.user)
-
-
-@app.route("/login",methods=['GET','POST'])
-def login():
-    db = connect_db()
-    if request.method == 'POST':
-        # 获取表单数据
-        input_email = request.form['email']
-        input_password = request.form['password']
-
-        # 查询数据库以获取用户
-        cursor = db.cursor()
-        query = "SELECT * FROM tb_user WHERE email = %s"
-        cursor.execute(query, (input_email))
-        result = cursor.fetchone()
-
-        # 验证邮箱和密码
-        if result and check_password_hash(result['password'], input_password):
-            # 构造 User 对象
-            user = User(result['email'], result['password'])
-            login_user(user)  # 登录用户
-            flash('Login success.')
-            return redirect(url_for('index'))  # 重定向到主页
-        else:
-            flash('Invalid email or password.')  # 如果验证失败，显示错误消息
-            return redirect(url_for('login'))  # 重定向回登录页
-
-    return render_template('login.html')
-
-
-@app.route("/register",methods=['GET','POST'])
-def register():
-    db = connect_db()
-    if request.method == 'POST':
-        # 获取表单数据
-        input_email = request.form['email']
-        input_password = request.form['password']
-        input_repeat_password = request.form['password-repeat']
-
-        # 验证输入
-        if input_password != input_repeat_password:
-            flash('Two passwords are different.')
-            return redirect(url_for('register'))
-
-        # 检查是否已注册
-        cursor = db.cursor()
-        query = "SELECT * FROM tb_user WHERE email = %s"
-        cursor.execute(query, (input_email,))
-        result = cursor.fetchone()
-        if result:
-            flash('Email has already been registered.')
-            return redirect(url_for('register'))
-
-        # 生成密码哈希值
-        password_hash = generate_password_hash(input_password)
-
-        # 执行插入操作
-        query = "INSERT INTO tb_user (email, password) VALUES (%s, %s)"
-        cursor.execute(query, (input_email, password_hash))
-        db.commit()
-
-        flash("Thank you for registering.")
-        return redirect(url_for('login'))
-
-    return render_template('register.html')
 
 
 @app.route("/logout")
