@@ -84,7 +84,7 @@
             </ul>
           {% endif %} 
         {% endwith %}
-        <form class="login-form needs-validation" method="POST" novalidate>
+        <form class="login-form needs-validation" action="/login" method="POST" novalidate>
           <p class="login-title">
             Sign In
           </p>
@@ -106,13 +106,14 @@
               data-logo_alignment="left"
           ></div>
           <!-- google 帳號登入 -->
-
+          
           <div class="form-floating my-4">
             <input type="email" class="form-control" id="floatingInput" placeholder="name@example.com" name="email"required>
             <label for="floatingInput">Email address</label>
             <div class="invalid-feedback">
               請輸入電子郵件。
             </div>
+            
           </div>
   
           <div class="form-floating mt-4">
@@ -122,7 +123,7 @@
               請輸入密碼。
             </div>
           </div>
-  
+          
           <div class="forget-register mt-1 mb-3">            
             <div class="forget">
               <a href="#">忘記密碼?</a>
@@ -131,7 +132,8 @@
   
           <div class="d-grid gap-2">
             <input class="btn login-btn" type="submit" value="登入">            
-          </div>   
+          </div> 
+           
           <hr>
           <div>
             <p>還沒有帳號?<a class="btn btn-lg login-register-btn mx-3" href="/register" role="button">註冊</a></p>         
