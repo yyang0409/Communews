@@ -111,15 +111,14 @@
                             
       <div class="row">
         <!-- 關鍵字選取 news -->
-        <span class="topic fs-3"># 收藏</span>
-          <form method="post">
-            <select class="select-keyword info-select" id="hot-select">
+        <p class="topic fs-2 mt-2"># 收藏</p> 
+          <form method="POST" action="/collection">
+            <select class="select-keyword info-select" id="hot-select" >
               <!-- user 收藏的關鍵字 -->
-              <option value="1" selected="selected">三百轟</option>
-              <option value="2">防彈少年團</option>
-              <option value="3">貓咪</option>
-              <option value="4">青蛙呱呱呱</option>
-            </select>            
+                {% for keyword in collection_kw_nm %}
+                  <option value="{{ keyword[0] }}" {% if keyword[0]==1 %}selected="selected" {%endif%}>{{ keyword[1] }}</option>
+                {% endfor %}
+            </select>   
           </form>
 
       <!-- 後端要回傳關鍵字到id -->
@@ -282,7 +281,7 @@
   
         // Send the selected value to the backend using AJAX
         $.ajax({
-          url: "/process_value",
+          url: "/collection",
           method: "POST",
           data: { selectedValue: selectedValue },
           success: function(response) {
