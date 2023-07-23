@@ -71,16 +71,20 @@ def get_subject_col_data(collection_name,option):
 
     return hot_keywords_list
 
-#熱門頁面比對
+
 def calculate_tfidf(news_text, keywords):
-    # 計算TF-IDF向量
-    vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform(news_text)
-    query_vector = vectorizer.transform([keywords])  # 把關鍵字轉換成TF-IDF向量
+    try:
+        vectorizer = TfidfVectorizer()
+        tfidf_matrix = vectorizer.fit_transform(news_text)
+        query_vector = vectorizer.transform([keywords])  # 把關鍵字轉換成TF-IDF向量
+    except ValueError:
+        print("ValueError: The documents only contain stop words or have no content.")
+        return None
 
     # 計算相似性
     similarity_scores = cosine_similarity(tfidf_matrix, query_vector)
     return similarity_scores.flatten()
+#熱門頁面比對
 def hot_all_search_news(option):
     all_keywords = get_subject_col_data("綜合全部", option)
     selected_news = {}  # 存儲最相似的新聞
@@ -208,7 +212,6 @@ def hot_topic_search_news(collection_name,option):
             keyword_news_data[:] = keyword_news_data[:4]
             # 將相似度最高的前10篇新聞添加到selected_news字典中
             selected_news[keyword] = [news['document'] for news in keyword_news_data]
-            
     return selected_news
 
 #使用者搜尋 比對 
