@@ -87,11 +87,12 @@ function listenforLike() {
         console.log("Like status:", likeStatus);
         // 獲取data-id的值
         var dataIdValue = like.dataset.id;
-  
+        // 從 'data-path' 屬性中獲取 'path' 的值
+        var path = event.target.dataset.path;
         // 將data-id的值透過AJAX POST請求提交到Flask的app.py後端
         var xhr = new XMLHttpRequest();
-        xhr.open("POST", "/hot", true);
-        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        xhr.open("POST", path, true);
+        xhr.setRequestHeader("Content-Type", "application/json"); 
         xhr.onreadystatechange = function() {
           if (xhr.readyState === XMLHttpRequest.DONE) {
             if (xhr.status === 200) {
