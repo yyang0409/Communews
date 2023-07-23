@@ -94,8 +94,9 @@ def user_collection_loader():
 def do_like(request):
     db = connect_db()
     cursor = db.cursor()
-    data_id = request.form.get('data_id')
-    ISLIKE = request.form.get('like_status')
+    data = request.json
+    data_id = data.get('data_id')
+    ISLIKE = data.get('like_status')
     if ISLIKE == 'Y' :
         if collection_loader(data_id)[1] =="Y":
             sql_insert = "UPDATE tb_collection_record SET islike =%s ,date=%s WHERE id_user = %s AND id_keyword=%s "
@@ -329,7 +330,7 @@ def hot():
         return "Invalid request method"
 
 # 熱門頁面-每週
-@app.route("/hot/evevyweek", methods=['GET','POST'])
+@app.route("/hot/everyweek", methods=['GET','POST'])
 def evevyweek():
     like_status_dict={}
     stars_count_dict = {}  # 用於存儲每個新聞的星星數量
@@ -368,7 +369,7 @@ def evevyweek():
         return "Invalid request method"
 
 # 熱門頁面-每月
-@app.route("/hot/evevymonth", methods=['GET','POST'])
+@app.route("/hot/everymonth", methods=['GET','POST'])
 def evevymonth():
     like_status_dict={}
     stars_count_dict = {}  # 用於存儲每個新聞的星星數量

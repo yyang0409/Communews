@@ -194,10 +194,10 @@
           <a class="nav-link"  href="/hot">當日熱門</a>
         </li>
         <li class="nav-item me-1 hot-tab">
-          <a class="nav-link active" aria-current="page"  href="/hot/evevyweek">當週熱門</a>
+          <a class="nav-link active" aria-current="page"  href="/hot/everyweek">當週熱門</a>
         </li>
         <li class="nav-item me-1 hot-tab">
-          <a class="nav-link" href="/hot/evevymonth">當月熱門</a>
+          <a class="nav-link" href="/hot/everymonth">當月熱門</a>
         </li>
       </ul>
       <!-- end of 熱門選項 -->
@@ -210,7 +210,7 @@
         <div class="row">
           <!-- Keyword -->
           <div style="width: 100%;height: fit-content;">
-            <div class="like {% if like_status_dict[keyword] == 'Y' %}like-yes{% else %}like-no{% endif %}" data-id="{{keyword}}" style="display:inline-block;" ></div> 
+            <div class="like {% if like_status_dict[keyword] == 'Y' %}like-yes{% else %}like-no{% endif %}" data-id="{{keyword}}" data-path="/hot/everyweek" style="display:inline-block;" ></div> 
               <div style="display:inline-block;">
                 <a class="nav-link" href="">
                   <span class="topic fs-3 ms-3"># {{ keyword }}</span>
@@ -250,7 +250,7 @@
                 </div>
               
                 <!-- 評分 -->
-                <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ news.rating}}" data-path="/hot/evevyweek">
+                <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ news.rating}}" data-path="/hot/everyweek">
                   <p class="star" name="{{news._id}}">&#9734;</p>
                   <p class="star" name="{{news._id}}">&#9734;</p>
                   <p class="star" name="{{news._id}}">&#9734;</p>
