@@ -200,7 +200,6 @@
     <div class="container news-container">                 
       <div class="row">
         <div style="width: 100%;height: fit-content;">
-          <div class="like like-no" data-id="{{topicname}}" style="display:inline-block;" ></div>
         <p class="topic fs-2 mt-2" style="display:inline-block;"># <span class="topicname">{{topicname}}</span>新聞</p>
         </div>
         
@@ -245,7 +244,7 @@
               
                 <!-- 評分 -->
                 <!-- 按了之後要星星不能有變化 要跳出modal請使用者登入 -->
-                  <form class="rating" data-id="{{news._id}}">                  
+                  <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ news.rating}}"  data-path="/topic/{{topicname}}">                  
                     <p class="star" name="{{news._id}}">&#9734;</p>
                     <p class="star" name="{{news._id}}">&#9734;</p>
                     <p class="star" name="{{news._id}}">&#9734;</p>
