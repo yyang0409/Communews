@@ -17,7 +17,7 @@ import pandas as pd
 import numpy as np
 #資料庫
 from DB.mongodb import *
-from datetime import datetime
+from datetime import datetime,timedelta
 
 #停用詞
 stops = []
@@ -91,7 +91,7 @@ def url(topic,subtopic,spider_url):
         save_to_db("TodayNews",topic,dataframe(topic,subtopic,title,URL,image_url,content,summary,emotion_value,new_keywords,converted_date))  #放進資料庫
 
 def hot_kw(topic):
-    current_date =datetime.now().strftime("%Y-%m-%d")
+    current_date =(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")
     if topic == '綜合全部':
         kw_list=get_tol_col_data()
         all_keywords=calculate_keywords(kw_list)
