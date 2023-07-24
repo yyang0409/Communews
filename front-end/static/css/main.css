@@ -181,8 +181,12 @@ header{
 }
 
 .nav-item button:focus{
-    color: #fff;
     border: none;
+}
+
+.modal-body,
+.modal-header{
+    color: black;
 }
 
 .modal-body p{
@@ -262,7 +266,8 @@ header{
 } */
 
 /* rating */
-.rating{
+.rating,
+.no-rating{
     position: relative;
     display: flex;
     align-items: center;
@@ -292,7 +297,8 @@ header{
     margin-right: 10px;
 }
 
-.like {
+.like,
+.before-like {
     width: 48px;
     height: 48px;
     position: relative;

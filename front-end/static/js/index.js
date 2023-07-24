@@ -72,7 +72,7 @@ function printRatingResult(result,num=0){
 
 function listenforLike() {
     var likes = document.querySelectorAll(".like");
-    console.log(likes);
+    
   
     likes.forEach(like => {
       like.addEventListener("click", (event) => {
