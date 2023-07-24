@@ -21,7 +21,7 @@ def connect_db():
             "host": "127.0.0.1",
             "port": 3306,
             "user": "root",
-            "password": "109403502",
+            "password": "Jeter#622019",
             "db": "communews",
             "charset": "utf8mb4",
             "cursorclass": pymysql.cursors.DictCursor
@@ -330,7 +330,7 @@ def hot():
         return "Invalid request method"
 
 # 熱門頁面-每週
-@app.route("/hot/everyweek", methods=['GET','POST'])
+@app.route("/hot/當週熱門", methods=['GET','POST'])
 def evevyweek():
     like_status_dict={}
     stars_count_dict = {}  # 用於存儲每個新聞的星星數量
@@ -369,7 +369,7 @@ def evevyweek():
         return "Invalid request method"
 
 # 熱門頁面-每月
-@app.route("/hot/everymonth", methods=['GET','POST'])
+@app.route("/hot/當月熱門", methods=['GET','POST'])
 def evevymonth():
     like_status_dict={}
     stars_count_dict = {}  # 用於存儲每個新聞的星星數量
@@ -593,6 +593,15 @@ def collection():
         print(selected_value)
         return jsonify(result)
     
+@app.route("/collection/熱門/當週")
+@login_required
+def collection_week():
+    return render_template('collection_week.html')
+
+@app.route("/collection/熱門/當月")
+@login_required
+def collection_month():
+    return render_template('collection_month.html')    
 
 @app.route("/logout")
 @login_required

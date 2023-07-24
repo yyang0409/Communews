@@ -226,19 +226,53 @@
                 </div>
               
                 <!-- 評分 -->
-                <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ news.rating}}" data-path="/">
-                  <!-- <i class="fa-solid fa-star" name="{{news._id}}"></i>
-                  <i class="fa-solid fa-star" name="{{news._id}}"></i> 
-                  <i class="fa-solid fa-star" name="{{news._id}}"></i> 
-                  <i class="fa-solid fa-star" name="{{news._id}}"></i> 
-                  <i class="fa-solid fa-star" name="{{news._id}}"></i>                   -->
+                 <!-- User未登入 -->                
+                 <form class="no-rating" data-id="{{news._id}}">
+                  <p class="star" name="{{news._id}}" data-bs-toggle="modal" data-bs-target="#exampleModal">&#9734;</p>
+                  <p class="star" name="{{news._id}}" data-bs-toggle="modal" data-bs-target="#exampleModal">&#9734;</p>
+                  <p class="star" name="{{news._id}}" data-bs-toggle="modal" data-bs-target="#exampleModal">&#9734;</p>
+                  <p class="star" name="{{news._id}}" data-bs-toggle="modal" data-bs-target="#exampleModal">&#9734;</p>
+                  <p class="star" name="{{news._id}}" data-bs-toggle="modal" data-bs-target="#exampleModal">&#9734;</p>
+                  <span class="stars-score" id="{{news._id}}"></span> 
+                  
+                  <!-- Modal -->
+                  <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="false">
+                    <div class="modal-dialog modal-dialog-centered">
+                      <div class="modal-content">
+                        <div class="modal-header" >
+                          <img src="{{url_for('static',filename='img/44300_gray.png')}}" alt="logo" style='height: 20%; width: 20%; object-fit: contain'>
+                          <p><h1 class="modal-title fs-5" id="exampleModalLabel" style="color: black;">登入後即享有<b>Communews</b>的所有功能</h1></p>
+                          <!-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> -->
+                        </div>
+                        <div class="modal-body" style="color: black;">
+                          <ul>
+                            <li>
+                              <p>在「推薦」可查看我們推薦給您的新聞</p>
+                            </li>
+                            <li>
+                              <p>隨時<span>收藏</span>感興趣的主題</p>
+                            </li>
+                          </ul>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">不用了。謝謝</button>
+                          <a class="btn btn-primary" href="/login" role="button">登入</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- end of modal -->
+                </form>
+
+                <!-- user 已登入 -->                
+                <!-- <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ news.rating}}" data-path="/">
                   <p class="star" name="{{news._id}}">&#9734;</p>
                   <p class="star" name="{{news._id}}">&#9734;</p>
                   <p class="star" name="{{news._id}}">&#9734;</p>
                   <p class="star" name="{{news._id}}">&#9734;</p>
                   <p class="star" name="{{news._id}}">&#9734;</p>
                   <span class="stars-score" id="{{news._id}}"></span>
-                </form>
+                </form> -->
 
                 <div class="col-6 ptt-link">
                   <a href="{{ptt_url}}">PTT-post</a>
