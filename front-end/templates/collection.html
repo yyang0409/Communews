@@ -113,7 +113,7 @@
         <!-- 關鍵字選取 news -->
         <p class="topic fs-2 mt-2"># 收藏</p> 
           <form method="POST" action="/collection">
-            <select class="select-keyword info-select" id="hot-select" >
+            <select class="select-keyword info-select" id="keyword-select" >
               <!-- user 收藏的關鍵字 -->
                 {% for keyword in collection_kw_nm %}
                   <option value="{{ keyword[0] }}" {% if keyword[0]==1 %}selected="selected" {%endif%}>{{ keyword[1] }}</option>
@@ -189,7 +189,7 @@
         <div id="hot" class="collection-container menu collection-padding collection-card">
           <!-- 熱門選項 -->
           <div class="dropdown mt-2">
-            <select  id="dropdown" class="select-hottime info-select" onchange="select();">
+            <select  id="dropdown" class="select-hottime info-select" onchange="hot_selection();">
                 <option value="/collection" selected="selected">當日熱門</option>
                 <option value="/collection/熱門/當週">當週熱門</option>
                 <option value="/collection/熱門/當月">當月熱門</option>
@@ -279,8 +279,9 @@
     document.getElementById("myLink").click();
   </script>
   <script>
+    // 抓下拉式選單-關鍵字的值
     $(document).ready(function() {
-      $("#hot-select").on("change", function() {
+      $("#keyword-select").on("change", function() {
         var selectedValue = $(this).val();
   
         // Send the selected value to the backend using AJAX
