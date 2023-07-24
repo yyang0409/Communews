@@ -87,9 +87,9 @@ header{
    transition: transform .3s;
 }
 
-/* .navigation .nav-link:hover{
+.navigation .nav-link:hover{
     color: rgba(255, 255, 255, 0.8);
-} */
+}
 
 .navigation .nav-link:hover::after{
     transform: scaleX(1);
@@ -125,10 +125,12 @@ header{
     color: white;
 }
 
-.nav-tabs .nav-link:hover{
+.nav-tabs {
     color:#fff;
     /* background-color: #fff; */
 }
+
+
 
 /* 最新&熱門 */
 .nav-pills .nav-link,
@@ -179,8 +181,12 @@ header{
 }
 
 .nav-item button:focus{
-    color: #fff;
     border: none;
+}
+
+.modal-body,
+.modal-header{
+    color: black;
 }
 
 .modal-body p{
@@ -260,7 +266,8 @@ header{
 } */
 
 /* rating */
-.rating{
+.rating,
+.no-rating{
     position: relative;
     display: flex;
     align-items: center;
@@ -290,7 +297,8 @@ header{
     margin-right: 10px;
 }
 
-.like {
+.like,
+.before-like {
     width: 48px;
     height: 48px;
     position: relative;
