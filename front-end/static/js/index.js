@@ -6,11 +6,14 @@ function getRating() {
     let news_id = rate[i].dataset.id; // 取得新聞ID
     let newsTopic = rate[i].dataset.topic; // 取得新聞主題
     let score = parseInt(rate[i].dataset.score); // 將score轉換為整數
+    if (isNaN(score)) {
+      score = 0;
+    }
     let path = rate[i].dataset.path;
     console.log("路徑:",path);
     console.log("新聞ID：", news_id);
     console.log(ratingResult);
-    printRatingResult(ratingResult);
+    printRatingResult(ratingResult,score);
 
     stars.forEach((star, index1) => {
       let current_star_level = index1 + 1;
@@ -44,7 +47,7 @@ function getRating() {
     });
   }
 }
-//現在可以取消 但是取消歷史紀錄 沒辦法不刷新就取消
+
 
 
 function sendRatingToBackend(path,news_id, newsTopic, rating) {
@@ -66,7 +69,7 @@ function sendRatingToBackend(path,news_id, newsTopic, rating) {
     });
 }
 
-function printRatingResult(result,num=0){
+function printRatingResult(result,num){
     result.textContent = `${num}/5`;
 }
 
