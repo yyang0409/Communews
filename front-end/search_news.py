@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 from collections import Counter
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,time
 import nltk
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -9,7 +9,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 nltk.download('punkt')
 
 client = MongoClient("mongodb+srv://user1:user1@cluster0.ronm576.mongodb.net/TodayNews?retryWrites=true&w=majority")
-db_today = client["TodayNews"]
+#db_today = client["TodayNews"]
 db_daily = client['關鍵每一天']
 db=client['News']
 total_subject = ['健康', '國際', '娛樂', '生活', '社會地方', '科技', '財經', '運動']
@@ -58,7 +58,7 @@ def get_subject_col_data(collection_name,option):
     collection = db_daily[collection_name]
     end_datetime=end_datetime.strftime("%Y-%m-%d")
     start_datetime=start_datetime.strftime("%Y-%m-%d")
-    print(start_datetime,end_datetime)
+    print("關鍵字找:大於等於",start_datetime,"小於",end_datetime)
     documents = collection.find({"date": {"$gte": start_datetime, "$lt": end_datetime}})
     
     keywords_list = []
@@ -89,13 +89,26 @@ def hot_all_search_news(option):
     all_keywords = get_subject_col_data("綜合全部", option)
     selected_news = {}  # 存儲最相似的新聞
 
+    current_datetime = datetime.now()
+
+    if option == 'daily':
+        end_datetime = current_datetime.replace(hour=0, minute=0, second=0, microsecond=0)
+        start_datetime = end_datetime - timedelta(days=1)
+    elif option == 'weekly':
+        end_datetime = current_datetime.replace(hour=0, minute=0, second=0, microsecond=0)
+        start_datetime = end_datetime - timedelta(days=7)
+    elif option == 'monthly':
+        end_datetime = current_datetime.replace(hour=0, minute=0, second=0, microsecond=0)
+        start_datetime = end_datetime - timedelta(days=30)
+    print("新聞找:大於等於",start_datetime,"小於",end_datetime)
     for keyword in all_keywords:
         
         # 進行聚合查詢，使用一個關鍵字來查詢新聞
         pipeline = [
             {
                 '$match': {
-                    'title': {'$regex': f'.*{keyword}.*', '$options': 'i'}
+                    'title': {'$regex': f'.*{keyword}.*', '$options': 'i'},
+                    'timestamp': {"$gte": start_datetime, "$lt": end_datetime}
                 }
             },
             {
@@ -115,22 +128,9 @@ def hot_all_search_news(option):
         # 建立一個空的列表來保存查詢結果
         keyword_news_data = []
 
-        # 根據選擇的選項，查詢所有主題的新聞
-        if option == 'daily':
-            for collection_name in total_subject:
-                news_data = list(db_today[collection_name].aggregate(pipeline))
-                keyword_news_data.extend(news_data)  # 把查詢結果加入列表
-        elif option == 'weekly':
-            for collection_name in total_subject:
+        for collection_name in total_subject:
                 news_data = list(db[collection_name].aggregate(pipeline))
                 keyword_news_data.extend(news_data)  # 把查詢結果加入列表
-        elif option == 'monthly':
-            for collection_name in total_subject:
-                news_data = list(db[collection_name].aggregate(pipeline))
-                keyword_news_data.extend(news_data)  # 把查詢結果加入列表
-        else:
-            return
-
         # 提取新聞標題和摘要文本
         news_text = [news['combined_text'] for news in keyword_news_data]
 
@@ -157,13 +157,26 @@ def hot_topic_search_news(collection_name,option):
     all_keywords = get_subject_col_data(collection_name, option)
     selected_news = {}  # 存儲最相似的新聞
 
+    current_datetime = datetime.now()
+
+    if option == 'daily':
+        end_datetime = current_datetime.replace(hour=0, minute=0, second=0, microsecond=0)
+        start_datetime = end_datetime - timedelta(days=1)
+    elif option == 'weekly':
+        end_datetime = current_datetime.replace(hour=0, minute=0, second=0, microsecond=0)
+        start_datetime = end_datetime - timedelta(days=7)
+    elif option == 'monthly':
+        end_datetime = current_datetime.replace(hour=0, minute=0, second=0, microsecond=0)
+        start_datetime = end_datetime - timedelta(days=30)
+    print("新聞找:大於等於",start_datetime,"小於",end_datetime)
     for keyword in all_keywords:
         
         # 進行聚合查詢，使用一個關鍵字來查詢新聞
         pipeline = [
             {
                 '$match': {
-                    'title': {'$regex': f'.*{keyword}.*', '$options': 'i'}
+                    'title': {'$regex': f'.*{keyword}.*', '$options': 'i'},
+                    'timestamp': {"$gte": start_datetime, "$lt": end_datetime}
                 }
             },
             {
@@ -182,19 +195,9 @@ def hot_topic_search_news(collection_name,option):
 
         # 建立一個空的列表來保存查詢結果
         keyword_news_data = []
-        # 根據選擇的選項，查詢所有主題的新聞
-        if option == 'daily':
-                news_data = list(db_today[collection_name].aggregate(pipeline))
-                keyword_news_data.extend(news_data)  # 把查詢結果加入列表
-        elif option == 'weekly':
-                news_data = list(db[collection_name].aggregate(pipeline))
-                keyword_news_data.extend(news_data)  # 把查詢結果加入列表
-        elif option == 'monthly':
-                news_data = list(db[collection_name].aggregate(pipeline))
-                keyword_news_data.extend(news_data)  # 把查詢結果加入列表
-        else:
-            return
-
+    
+        news_data = list(db[collection_name].aggregate(pipeline))
+        keyword_news_data.extend(news_data)  # 把查詢結果加入列表
         # 提取新聞標題和摘要文本
         news_text = [news['combined_text'] for news in keyword_news_data]
 
