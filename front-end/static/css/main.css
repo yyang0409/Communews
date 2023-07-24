@@ -87,9 +87,9 @@ header{
    transition: transform .3s;
 }
 
-/* .navigation .nav-link:hover{
+.navigation .nav-link:hover{
     color: rgba(255, 255, 255, 0.8);
-} */
+}
 
 .navigation .nav-link:hover::after{
     transform: scaleX(1);
@@ -125,10 +125,12 @@ header{
     color: white;
 }
 
-.nav-tabs .nav-link:hover{
+.nav-tabs {
     color:#fff;
     /* background-color: #fff; */
 }
+
+
 
 /* 最新&熱門 */
 .nav-pills .nav-link,
