@@ -224,7 +224,17 @@
                     <a href="{{ptt_url}}" class="card-link" target="_blank">{{ptt_title}}</a>
                   </div>
                 </div>
-              
+                {% if user.is_authenticated %}
+                <!-- user 已登入 -->                
+                 <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ news.rating}}" data-path="/">
+                  <p class="star" name="{{news._id}}">&#9734;</p>
+                  <p class="star" name="{{news._id}}">&#9734;</p>
+                  <p class="star" name="{{news._id}}">&#9734;</p>
+                  <p class="star" name="{{news._id}}">&#9734;</p>
+                  <p class="star" name="{{news._id}}">&#9734;</p>
+                  <span class="stars-score" id="{{news._id}}"></span>
+                </form>
+                {% else%}
                 <!-- 評分 -->
                  <!-- User未登入 -->                
                  <form class="no-rating" data-id="{{news._id}}">
@@ -263,16 +273,8 @@
                   </div>
                   <!-- end of modal -->
                 </form>
-
-                <!-- user 已登入 -->                
-                <!-- <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ news.rating}}" data-path="/">
-                  <p class="star" name="{{news._id}}">&#9734;</p>
-                  <p class="star" name="{{news._id}}">&#9734;</p>
-                  <p class="star" name="{{news._id}}">&#9734;</p>
-                  <p class="star" name="{{news._id}}">&#9734;</p>
-                  <p class="star" name="{{news._id}}">&#9734;</p>
-                  <span class="stars-score" id="{{news._id}}"></span>
-                </form> -->
+                {% endif %}
+                
 
                 <div class="col-6 ptt-link">
                   <a href="{{ptt_url}}">PTT-post</a>
