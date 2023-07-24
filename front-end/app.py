@@ -21,7 +21,7 @@ def connect_db():
             "host": "127.0.0.1",
             "port": 3306,
             "user": "root",
-            "password": "Jeter#622019",
+            "password": "109403502",
             "db": "communews",
             "charset": "utf8mb4",
             "cursorclass": pymysql.cursors.DictCursor
@@ -331,7 +331,7 @@ def hot():
 
 # 熱門頁面-每週
 @app.route("/hot/當週熱門", methods=['GET','POST'])
-def evevyweek():
+def everyweek():
     like_status_dict={}
     stars_count_dict = {}  # 用於存儲每個新聞的星星數量
     if request.method == 'GET':
@@ -370,7 +370,7 @@ def evevyweek():
 
 # 熱門頁面-每月
 @app.route("/hot/當月熱門", methods=['GET','POST'])
-def evevymonth():
+def everymonth():
     like_status_dict={}
     stars_count_dict = {}  # 用於存儲每個新聞的星星數量
     if request.method == 'GET':
