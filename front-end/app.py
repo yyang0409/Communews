@@ -21,7 +21,7 @@ def connect_db():
             "host": "127.0.0.1",
             "port": 3306,
             "user": "root",
-            "password": "Jeter#622019",
+            "password": "109403502",
             "db": "communews",
             "charset": "utf8mb4",
             "cursorclass": pymysql.cursors.DictCursor
