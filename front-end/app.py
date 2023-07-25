@@ -21,7 +21,7 @@ def connect_db():
             "host": "127.0.0.1",
             "port": 3306,
             "user": "root",
-            "password": "109403502",
+            "password": "Jeter#622019",
             "db": "communews",
             "charset": "utf8mb4",
             "cursorclass": pymysql.cursors.DictCursor
@@ -574,9 +574,9 @@ def topic_hot_month(topicname):
         return "Invalid request method"
 
 @app.route("/recommendation")
-#@login_required
+@login_required
 def recommendation():
-    return render_template('recommendation.html',user=g.user)
+    return render_template('recommendation.html')
 
 
      
