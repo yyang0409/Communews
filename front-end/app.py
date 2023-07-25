@@ -574,9 +574,9 @@ def topic_hot_month(topicname):
         return "Invalid request method"
 
 @app.route("/recommendation")
-#@login_required
+@login_required
 def recommendation():
-    return render_template('recommendation.html',user=g.user)
+    return render_template('recommendation.html')
 
 
      
