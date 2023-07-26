@@ -249,18 +249,20 @@ def register():
 @app.route("/", methods=['GET','POST'])
 def index():
     if request.method == 'GET':
-        ######要把資料庫有紀錄的評分放上去
+
         topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經"]
         combined_data = []
         # 使用线程池并行处理获取数据
         with ThreadPoolExecutor() as executor:
             # 并行获取各个主题的数据
-            futures = [executor.submit(get_DB_News_data, topic,50) for topic in topics]
+            futures = [executor.submit(get_DB_News_data, topic,100) for topic in topics]
+            
             # 收集各个主题的数据
             for future in futures:
                 combined_data.extend(future.result())
+        news_data=newest_news_serch(combined_data)
         # 按照timestamp字段排序
-        sorted_data = sorted(combined_data, key=lambda x: x['timestamp'], reverse=True)
+        sorted_data = sorted(news_data, key=lambda x: x['timestamp'], reverse=True)
         # 取得當前用戶ID
         current_user_id = g.user.user_id if g.user.is_authenticated else None
         # 逐一查詢每筆新聞的評分分數，並加回到sorted_data中
@@ -429,7 +431,9 @@ def show():
 @app.route("/topic/<topicname>", methods=['GET','POST'])
 def topic(topicname):
     if request.method == 'GET':
-        news_list=get_DB_News_data(topicname,100)
+        data=get_DB_News_data(topicname,250)
+        news_data=newest_news_serch(data)
+        news_list = sorted(news_data, key=lambda x: x['timestamp'], reverse=True)
         # 取得當前用戶ID
         current_user_id = g.user.user_id if g.user.is_authenticated else None
         # 逐一查詢每筆新聞的評分分數，並加回到sorted_data中
@@ -576,7 +580,7 @@ def topic_hot_month(topicname):
 @app.route("/recommendation")
 @login_required
 def recommendation():
-    return render_template('recommendation.html')
+    return render_template('recommendation.html',user=g.user)
 
 
      
