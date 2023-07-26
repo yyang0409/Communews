@@ -1,9 +1,11 @@
+from kmeans import *
 from pymongo import MongoClient
 from collections import Counter
 from datetime import datetime, timedelta,time
 import nltk
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import pandas as pd
 
 # 在程式中使用TF-IDF需要初始化NLTK
 nltk.download('punkt')
@@ -16,16 +18,28 @@ total_subject = ['健康', '國際', '娛樂', '生活', '社會地方', '科技
 #用來抓最新新聞的
 def get_DB_News_data(topic,num):
 
-    collection = db[topic]
+    current_datetime = datetime.now()
+    end_datetime = current_datetime.replace(hour=0, minute=0, second=0, microsecond=0)
+    start_datetime = end_datetime - timedelta(days=1)
 
+    collection = db[topic]
     pipeline = [
+        {'$match': {'timestamp': {"$gte": start_datetime, "$lt": end_datetime}}},
         {"$sort": {"timestamp": -1}},
         {"$limit": num}
     ]
 
     data = collection.aggregate(pipeline)
+    #print("這個是data:",list(data))
     return list(data)
+#get_DB_News_data("運動",20)
+#print(get_DB_News_data("運動",2))
 #計算每周 每月 關鍵字數量
+def newest_news_serch(combined_data):
+    df = pd.DataFrame(combined_data)
+    print(len(df))
+    news_list=run_kmeans_from_df(df,len(df)//5)
+    return news_list
 def calculate_keywords(keywords_list):
 
     keyword_counts = Counter()
