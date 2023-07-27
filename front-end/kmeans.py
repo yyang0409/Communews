@@ -101,14 +101,14 @@ class KmeansClustering():
                 result[key].append(text_idx)
         return result
 
-def choose_final_news(result, df_news, cluster_num):
+def newest_choose_final_news(result, df_news, cluster_num):
     #print("這是result")
     #print(result)
     final_news_index = []
     for i in range(cluster_num):
         cluster = "cluster_" + str(i)
         cluster_content = result[cluster]
-        print(cluster_content)
+        #print(cluster_content)
         #for i in cluster_content:
             #print(df_news.at[i,0])
             
@@ -122,6 +122,34 @@ def choose_final_news(result, df_news, cluster_num):
     #print("最終:",final_news_index)
     return final_news_index
 
+def hot_choose_final_news(result, df_news, cluster_num):
+    if not result or cluster_num < 1 or f'cluster_{cluster_num-1}' not in result:
+        print("Invalid result or cluster_num.")
+        return []
+    
+    final_news_index = []
+    
+    for i in range(cluster_num):
+        cluster = "cluster_" + str(i)
+        try:
+            cluster_content = result[cluster]
+
+            # Get the news within the cluster
+            news = df_news.loc[cluster_content]
+
+            # Sort the news within the cluster based on the similarity score and timestamp in descending order
+            news_sorted = news.sort_values(by=['similarity', 'timestamp'], ascending=[False, False])
+
+            # Get the index of the news article with the highest similarity score from the sorted cluster
+            max_similarity_news_index = news_sorted.index[0]
+
+            # Add the index of the news article with the highest similarity to the result list
+            final_news_index.append(max_similarity_news_index)
+        except KeyError:
+            print(f"Cluster {cluster} not found. Skipping.")
+            continue
+
+    return final_news_index
 
 def translate_text_to_dataframe(file):
     file = data_path+file
@@ -129,7 +157,7 @@ def translate_text_to_dataframe(file):
     return df
 
 
-def run_kmeans(news_summary,cluster_num):
+def newest_run_kmeans(news_summary,cluster_num):
     
     with open(data_path+'kmeans.txt', "w",encoding='utf-8') as file:
         # 遍历列表，逐行写入文件
@@ -142,15 +170,34 @@ def run_kmeans(news_summary,cluster_num):
     
     df_news_summary = translate_text_to_dataframe('kmeans.txt')
 
-    output_news_list = choose_final_news(result,df_news_summary,cluster_num)
+    output_news_list = newest_choose_final_news(result,df_news_summary,cluster_num)
     finished_kmeans_summary = []
 
     for news_index in (output_news_list):
         finished_kmeans_summary.append(news_summary[news_index])
     return finished_kmeans_summary
 
+def hot_run_kmeans(news_summary,cluster_num):
+    
+    with open(data_path+'kmeans.txt', "w",encoding='utf-8') as file:
+        # 遍历列表，逐行写入文件
+        for item in news_summary:
+            file.write(item+"\n")
+    CLSTER_NUM = cluster_num
 
-def run_kmeans_from_df(df,cluster_num):
+    Kmeans = KmeansClustering(stopwords_path=stopwords_path)
+    result = Kmeans.kmeans(data_path+'kmeans.txt', n_clusters=cluster_num)
+    
+    df_news_summary = translate_text_to_dataframe('kmeans.txt')
+
+    output_news_list = hot_choose_final_news(result,df_news_summary,cluster_num)
+    finished_kmeans_summary = []
+
+    for news_index in (output_news_list):
+        finished_kmeans_summary.append(news_summary[news_index])
+    return finished_kmeans_summary
+
+def newest_run_kmeans_from_df(df,cluster_num):
     #print(df)
     # 提取'id'字段的值并存储在列表中
     news_summary_list = df['summary'].tolist()
@@ -169,13 +216,59 @@ def run_kmeans_from_df(df,cluster_num):
     df_news_summary = translate_text_to_dataframe('kmeans.txt')
     df_news_summary['timestamp'] = df['timestamp'].apply(lambda x: x)
     #print(df_news_summary)
-    output_news_list = choose_final_news(result,df_news_summary,cluster_num)
+    output_news_list = newest_choose_final_news(result,df_news_summary,cluster_num)
     #print("傳回:",output_news_list)
     finished_kmeans_summary_list = []
 
     for news_index in (output_news_list):
         finished_kmeans_summary_list.append(news_summary_list[news_index])
-        print(news_summary_list[news_index])
+        #print(news_summary_list[news_index])
+    #print("finished_kmeans_summary_list:",finished_kmeans_summary_list)
+
+    df_return = pd.DataFrame()
+    
+    for summary in finished_kmeans_summary_list:
+        selected_rows = df[df["summary"] == summary]
+        #print(len(selected_rows))
+        if len(selected_rows)==1:
+            df_return = df_return.append(selected_rows, ignore_index=True) 
+        if len(selected_rows)>1:
+            #print("有兩個以上一樣的")
+            selected_rows = selected_rows.iloc[0]
+            df_return = df_return.append(selected_rows, ignore_index=True)
+    #print(df_return)
+    #list_data = df_return.values.tolist()
+    result_list = df_return.to_dict(orient='records')
+    #print(result_list)
+    return result_list
+
+def hot_run_kmeans_from_df(df,cluster_num):
+    #print(df)
+    # 提取'id'字段的值并存储在列表中
+    news_summary_list = df['summary'].tolist()
+    news_id_list = df['_id'].tolist()
+    
+    
+    with open(data_path+'kmeans.txt', "w",encoding='utf-8') as file:
+        # 遍历列表，逐行写入文件
+        for item in news_summary_list:
+            file.write(item+"\n")
+    CLSTER_NUM = cluster_num
+
+    Kmeans = KmeansClustering(stopwords_path=stopwords_path)
+    result = Kmeans.kmeans(data_path+'kmeans.txt', n_clusters=cluster_num)
+    #print(result)
+    df_news_summary = translate_text_to_dataframe('kmeans.txt')
+    df_news_summary['timestamp'] = df['timestamp'].apply(lambda x: x)
+    # 添加相似度欄位
+    df_news_summary['similarity'] = df['similarity']
+    #print(df_news_summary)
+    output_news_list = hot_choose_final_news(result,df_news_summary,cluster_num)
+    #print("傳回:",output_news_list)
+    finished_kmeans_summary_list = []
+
+    for news_index in (output_news_list):
+        finished_kmeans_summary_list.append(news_summary_list[news_index])
     #print("finished_kmeans_summary_list:",finished_kmeans_summary_list)
 
     df_return = pd.DataFrame()

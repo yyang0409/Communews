@@ -8,13 +8,13 @@ def train(corpus):
     model = Word2Vec(tokens,vector_size=100,window=5,min_count=10,sg=0,hs=1,negative=5,workers=1,epochs=5,sample=0.01)
 
     # 儲存模型
-    model.save('project_model_v1.model')  
+    model.save('project_model_0726.model')  
 
 
 def word2vec(kw):
   try:
-    loaded_model = Word2Vec.load('project_model_v1.model')
-    similar_words = loaded_model.wv.most_similar(kw, topn=10)
+    loaded_model = Word2Vec.load('project_model_0726.model')
+    similar_words = loaded_model.wv.most_similar(kw, topn=3)
     filtered_words = [word for word, score in similar_words if score > 0.5]
   except KeyError:
     filtered_words = "None"
