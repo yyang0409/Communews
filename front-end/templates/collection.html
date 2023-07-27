@@ -125,6 +125,10 @@
       <!-- 後端要回傳該關鍵字的新聞 -->
       {% for keyword, news_list in data.items() %}
       <div class="container" id="{{keyword}}">
+<<<<<<< HEAD
+         
+=======
+>>>>>>> 5b7f90ff38b413cb6e26ac485123e96a1271f901
         <div id="newest" class="collection-container menu collection-padding collection-card">
           <div id="newest-card">
             <!--card column-->
@@ -240,23 +244,6 @@
   <script src="{{url_for('static',filename='js/index.js')}}" defer></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="{{url_for('static',filename='js/hot_selection.js')}}" defer></script>
-  <script>
-    function openMenu(evt, menuName, cardname) {
-      var i, x, tablinks;
-      x = document.getElementsByClassName("menu");
-      for (i = 0; i < x.length; i++) {
-        x[i].style.display = "none";
-      }
-      tablinks = document.getElementsByClassName("tablink");
-      for (i = 0; i < x.length; i++) {
-        tablinks[i].className = tablinks[i].className.replace(" w3-dark-grey", "");
-      }
-      document.getElementById(menuName).style.display = "block";
-      document.getElementById(cardname).style.display = "flex";
-      evt.currentTarget.firstElementChild.className += " w3-dark-grey";
-    }
-    document.getElementById("myLink").click();
-  </script>
   <script>
     // 抓下拉式選單-關鍵字的值
     $(document).ready(function() {
