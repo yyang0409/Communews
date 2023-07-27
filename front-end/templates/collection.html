@@ -125,16 +125,6 @@
       <!-- 後端要回傳該關鍵字的新聞 -->
       <div class="container" id="{{keyword}}">
          
-        <!--選熱門&最新新聞按鈕-->
-        <div class="w3-row w3-center w3-card w3-padding">     
-          <a href="javascript:void(0)" onclick="openMenu(event, 'newest', 'newest-card');" id="myLink">
-            <div class="w3-col s6 tablink">最新新聞</div>
-          </a>     
-          <a href="javascript:void(0)" onclick="openMenu(event, 'hot', 'hot-card');">
-            <div class="w3-col s6 tablink">熱門新聞</div>
-          </a>
-        </div>
-
         <div id="newest" class="collection-container menu collection-padding collection-card">
           <div id="newest-card">
             <!--card column-->
@@ -184,69 +174,6 @@
           <!-- end of newest card -->
         </div>  
         <!-- end of newest -->
-
-    
-        <div id="hot" class="collection-container menu collection-padding collection-card">
-          <!-- 熱門選項 -->
-          <div class="dropdown mt-2">
-            <select  id="dropdown" class="select-hottime info-select" onchange="hot_selection();">
-                <option value="/collection" selected="selected">當日熱門</option>
-                <option value="/collection/熱門/當週">當週熱門</option>
-                <option value="/collection/熱門/當月">當月熱門</option>
-            </select>            
-          </div>
-
-          <br>
-          <!-- end of 熱門選項 -->
-
-          <div id = "hot-card">
-            <!--card column-->
-            <div class="collection-column mb-2">
-              <!-- Card section -->
-              <div class="card h-100 pb-2" style="width: 675px;">
-                <div class="row g-0">
-                  <div class="col col-md-4 pb-1" style="height:fit-content;">
-                    <a href="{{ url }}">
-                      <img src="{{ image }}" class="img-fluid rounded">  
-                      <!-- 沒有照片時要顯示 -->
-                      <!-- <img src="{{url_for('static',filename='img/44300_nobg.png')}}" class="img-fluid rounded" style="object-fit: cover;"> -->
-                    </a>  
-                  </div>
-                  <!-- card 內容 -->
-                  <div class="col-md-8 col-sm-12">
-                    <div class="card-body">
-                      <a class="card-title" href="{{title_url}}" >{{title}}</a>
-                      <p class="card-text mt-2"></p>
-                      <a href="{{ptt_url}}" class="card-link" target="_blank">{{ptt_title}}</a>
-                    </div>
-                  </div>
-
-                  <!-- 評分 -->
-                  <form class="rating" data-id="{{_id}}">
-                    <p class="star" name="{{_id}}">&#9734;</p>
-                    <p class="star" name="{{_id}}">&#9734;</p>
-                    <p class="star" name="{{_id}}">&#9734;</p>
-                    <p class="star" name="{{_id}}">&#9734;</p>
-                    <p class="star" name="{{_id}}">&#9734;</p>
-                    <span class="stars-score" id="{{_id}}"></span>
-                  </form>
-
-                  <div class="col-6 ptt-link">
-                    <a href="{{ptt_url}}">PTT-post</a>
-                    <a href="{{ptt_url}}">PTT-post</a>
-                    <a href="{{ptt_url}}">PTT-post</a>
-                  </div>
-
-                </div>
-                <!--end of card row-->
-              </div> 
-              <!-- end of card section -->
-            </div>
-            <!-- end of column -->         
-          </div>
-          <!-- end of hot-card -->
-        </div>
-        <!-- end of hot -->
       </div> 
       <!-- end of keyword container -->
       </div> 
@@ -261,23 +188,6 @@
   <script src="{{url_for('static',filename='js/index.js')}}" defer></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="{{url_for('static',filename='js/hot_selection.js')}}" defer></script>
-  <script>
-    function openMenu(evt, menuName, cardname) {
-      var i, x, tablinks;
-      x = document.getElementsByClassName("menu");
-      for (i = 0; i < x.length; i++) {
-        x[i].style.display = "none";
-      }
-      tablinks = document.getElementsByClassName("tablink");
-      for (i = 0; i < x.length; i++) {
-        tablinks[i].className = tablinks[i].className.replace(" w3-dark-grey", "");
-      }
-      document.getElementById(menuName).style.display = "block";
-      document.getElementById(cardname).style.display = "flex";
-      evt.currentTarget.firstElementChild.className += " w3-dark-grey";
-    }
-    document.getElementById("myLink").click();
-  </script>
   <script>
     // 抓下拉式選單-關鍵字的值
     $(document).ready(function() {
