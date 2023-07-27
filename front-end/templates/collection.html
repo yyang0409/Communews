@@ -123,40 +123,93 @@
 
       <!-- 後端要回傳關鍵字到id -->
       <!-- 後端要回傳該關鍵字的新聞 -->
+      {% for keyword, news_list in data.items() %}
       <div class="container" id="{{keyword}}">
+<<<<<<< HEAD
          
+=======
+>>>>>>> 5b7f90ff38b413cb6e26ac485123e96a1271f901
         <div id="newest" class="collection-container menu collection-padding collection-card">
           <div id="newest-card">
             <!--card column-->
+            {% for news in news_list %}
             <div class="collection-column mb-2">
               <!-- Card section -->
               <div class="card h-100 pb-2" style="width: 675px;">
                 <div class="row g-0">
                   <div class="col col-md-4 pb-1" style="height:fit-content;">
-                    <a href="{{ url }}">
-                      <img src="{{ image }}" class="img-fluid rounded">  
-                      <!-- 沒有照片時要顯示 -->
-                      <!-- <img src="{{url_for('static',filename='img/44300_nobg.png')}}" class="img-fluid rounded" style="object-fit: cover;"> -->
+                    <a href="{{ news.url }}">
+                      {% if news.image !="None" %}
+                      <img src="{{ news.image }}" class="img-fluid rounded">
+                      {% else %}
+                      <img src="{{url_for('static',filename='img/44300_nobg.png')}}" class="img-fluid rounded" style="object-fit: cover;">
+                      {% endif %}
                     </a>  
                   </div>
                   <!-- card 內容 -->
                   <div class="col-md-8 col-sm-12">
                     <div class="card-body">
-                      <a class="card-title" href="{{title_url}}" >{{title}}</a>
-                      <p class="card-text mt-2"></p>
+                      <a class="card-title" href="{{news.url}}" >{{news.title}}</a>
+                      <p class="card-text mt-2">
+                        {% if news.summary|length > 100 %}
+                          {{ news.summary[:100] }}...<a href="{{news.url}}">查看完整內容</a>
+                        {% else %}
+                          {{ news.summary }}
+                        {% endif %}
+                      </p>
                       <a href="{{ptt_url}}" class="card-link" target="_blank">{{ptt_title}}</a>
                     </div>
                   </div>
-
-                  <!-- 評分 -->
-                  <form class="rating" data-id="{{_id}}">
-                    <p class="star" name="{{_id}}">&#9734;</p>
-                    <p class="star" name="{{_id}}">&#9734;</p>
-                    <p class="star" name="{{_id}}">&#9734;</p>
-                    <p class="star" name="{{_id}}">&#9734;</p>
-                    <p class="star" name="{{_id}}">&#9734;</p>
-                    <span class="stars-score" id="{{_id}}"></span>
+                  {% if user.is_authenticated %}
+                  <!-- user 已登入 -->                
+                   <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ news.rating}}" data-path="/">
+                    <p class="star" name="{{news._id}}">&#9734;</p>
+                    <p class="star" name="{{news._id}}">&#9734;</p>
+                    <p class="star" name="{{news._id}}">&#9734;</p>
+                    <p class="star" name="{{news._id}}">&#9734;</p>
+                    <p class="star" name="{{news._id}}">&#9734;</p>
+                    <span class="stars-score" id="{{news._id}}"></span>
                   </form>
+                  {% else%}
+                  <!-- 評分 -->
+                   <!-- User未登入 -->                
+                   <form class="no-rating" data-id="{{news._id}}">
+                    <p class="star" name="{{news._id}}" data-bs-toggle="modal" data-bs-target="#exampleModal">&#9734;</p>
+                    <p class="star" name="{{news._id}}" data-bs-toggle="modal" data-bs-target="#exampleModal">&#9734;</p>
+                    <p class="star" name="{{news._id}}" data-bs-toggle="modal" data-bs-target="#exampleModal">&#9734;</p>
+                    <p class="star" name="{{news._id}}" data-bs-toggle="modal" data-bs-target="#exampleModal">&#9734;</p>
+                    <p class="star" name="{{news._id}}" data-bs-toggle="modal" data-bs-target="#exampleModal">&#9734;</p>
+                    <span class="stars-score" id="{{news._id}}"></span> 
+                    
+                    <!-- Modal -->
+                    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="false">
+                      <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                          <div class="modal-header" >
+                            <img src="{{url_for('static',filename='img/44300_gray.png')}}" alt="logo" style='height: 20%; width: 20%; object-fit: contain'>
+                            <p><h1 class="modal-title fs-5" id="exampleModalLabel" style="color: black;">登入後即享有<b>Communews</b>的所有功能</h1></p>
+                            <!-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> -->
+                          </div>
+                          <div class="modal-body" style="color: black;">
+                            <ul>
+                              <li>
+                                <p>在「推薦」可查看我們推薦給您的新聞</p>
+                              </li>
+                              <li>
+                                <p>隨時<span>收藏</span>感興趣的主題</p>
+                              </li>
+                            </ul>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">不用了。謝謝</button>
+                            <a class="btn btn-primary" href="/login" role="button">登入</a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <!-- end of modal -->
+                  </form>
+                  {% endif %}
 
                   <div class="col-6 ptt-link">
                     <a href="{{ptt_url}}">PTT-post</a>
@@ -169,17 +222,20 @@
               </div> 
               <!-- end of card section -->
             </div>
-            <!-- end of column -->         
+            <!-- end of column -->  
+            {% endfor %}        
           </div>
           <!-- end of newest card -->
         </div>  
         <!-- end of newest -->
       </div> 
       <!-- end of keyword container -->
+      {% endfor %} 
       </div> 
       <!-- end of row -->
     </div>
     <!-- end of container -->  
+    
 
         
   
