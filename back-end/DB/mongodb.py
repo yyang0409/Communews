@@ -14,18 +14,10 @@ def check_duplicate(topic,subtopic,title_list,URL_list,image_list): # 過濾掉�
     filtered_title = []
     filtered_url=[]
     filtered_image=[]
-
+    final_filtered_title=[]
+    final_filtered_url=[]
+    final_filtered_image=[]
 # 遍歷手上的資料清單
-    for title,url,image in zip(title_list,URL_list,image_list):
-        # 在資料庫中查找與當前標題相符的資料
-        result = collection2.find_one({'subtopic':subtopic,'title': title})
-        
-        # 如果找不到相符的資料，則將當前標題添加到篩選後的資料清單
-        if result is None:
-            filtered_title.append(title)
-            filtered_url.append(url)
-            filtered_image.append(image)
-
     for title,url,image in zip(title_list,URL_list,image_list):
         # 在資料庫中查找與當前標題相符的資料
         result = collection.find_one({'subtopic':subtopic,'title': title})
@@ -35,9 +27,19 @@ def check_duplicate(topic,subtopic,title_list,URL_list,image_list): # 過濾掉�
             filtered_title.append(title)
             filtered_url.append(url)
             filtered_image.append(image)
+
+    for title,url,image in zip(filtered_title,filtered_url,filtered_image):
+        # 在資料庫中查找與當前標題相符的資料
+        result = collection2.find_one({'subtopic':subtopic,'title': title})
+        
+        # 如果找不到相符的資料，則將當前標題添加到篩選後的資料清單
+        if result is None:
+            final_filtered_title.append(title)
+            final_filtered_url.append(url)
+            final_filtered_image.append(image)
     # 關閉與 MongoDB 的連接
     client.close()
-    return filtered_title,filtered_url,filtered_image
+    return final_filtered_title,final_filtered_url,final_filtered_image
 
 def save_to_db(db_name,topic,insert_data):
     # 連接到 MongoDB

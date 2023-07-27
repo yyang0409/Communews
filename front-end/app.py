@@ -415,12 +415,12 @@ def show():
     if request.method == 'POST':
         combined_data = {}
         keyword = request.form.get("keyword", "")
-        data =kw_search_news(keyword)
+        data =gen_kw_search_news(keyword)
         combined_data.update(data)
         extend_keywords=word2vec(keyword)
         if extend_keywords!="None":
             for extend_keyword in extend_keywords:
-                extend_data=kw_search_news(extend_keyword)
+                extend_data=gen_kw_search_news(extend_keyword)
                 combined_data.update(extend_data)
         return render_template('show.html',combined_data=combined_data,user=g.user)
     
@@ -587,15 +587,16 @@ def recommendation():
 @app.route("/collection", methods=['GET','POST'])
 @login_required
 def collection():
+    collection_kw_nm=user_collection_loader()
     if request.method == 'GET':
-        collection_kw_nm=user_collection_loader()
-        ####加入比對關鍵字的方法 抓新聞
-        return render_template('collection.html',collection_kw_nm=collection_kw_nm,user=g.user)
+        data,four_news=gen_kw_search_news(collection_kw_nm[0][1])
+        #print(data)
+        return render_template('collection.html',collection_kw_nm=collection_kw_nm,data=data,user=g.user)
     elif request.method == 'POST':
         selected_value = request.form.get("selectedValue")
-        result = f"Received selected value: {selected_value}"
-        print(selected_value)
-        return jsonify(result)
+        #print(selected_value)
+        data,four_news=gen_kw_search_news(collection_kw_nm[int(selected_value)-1][1])
+        return render_template('collection.html',collection_kw_nm=collection_kw_nm,data=data,user=g.user)
     
 @app.route("/collection/熱門/當週")
 @login_required

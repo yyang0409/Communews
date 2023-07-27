@@ -6,6 +6,8 @@ import nltk
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
+from ckiptagger import WS
+from keybert import KeyBERT
 
 # 在程式中使用TF-IDF需要初始化NLTK
 nltk.download('punkt')
@@ -38,7 +40,7 @@ def get_DB_News_data(topic,num):
 def newest_news_serch(combined_data):
     df = pd.DataFrame(combined_data)
     print(len(df))
-    news_list=run_kmeans_from_df(df,len(df)//5)
+    news_list= newest_run_kmeans_from_df(df,len(df)//5)
     return news_list
 def calculate_keywords(keywords_list):
 
@@ -84,6 +86,13 @@ def get_subject_col_data(collection_name,option):
     hot_keywords_list=calculate_keywords(keywords_list)
 
     return hot_keywords_list
+
+def convert_to_dataframe(keyword_news_data):
+    data = []
+    for news in keyword_news_data:
+        data.append(news['document'])
+    return pd.DataFrame(data)
+
 
 
 def calculate_tfidf(news_text, keywords):
@@ -145,23 +154,29 @@ def hot_all_search_news(option):
         for collection_name in total_subject:
                 news_data = list(db[collection_name].aggregate(pipeline))
                 keyword_news_data.extend(news_data)  # 把查詢結果加入列表
+                
         # 提取新聞標題和摘要文本
         news_text = [news['combined_text'] for news in keyword_news_data]
 
         # 計算TF-IDF相似性分數
         similarity_scores = calculate_tfidf(news_text, keyword)
 
+        
         # 把相似性分數加回每個新聞的資料中
         for i, news in enumerate(keyword_news_data):
             news['document']['similarity'] = similarity_scores[i]
 
+        df_keyword_news_data = convert_to_dataframe(keyword_news_data)
+        
+        result = hot_run_kmeans_from_df(df_keyword_news_data,len(df_keyword_news_data)//5)
+
         # 按照相似度和時間戳排序
-        keyword_news_data.sort(key=lambda x: (x['document']['similarity'], x['timestamp']), reverse=True)
+        
+        result.sort(key=lambda x: (x['similarity'], x['timestamp']), reverse=True)
+
           
         if keyword_news_data:
-            keyword_news_data[:] = keyword_news_data[:4]
-            # 將相似度最高的前10篇新聞添加到selected_news字典中
-            selected_news[keyword] = [news['document'] for news in keyword_news_data]
+            selected_news[keyword] = [news for news in result[:4]]
     return selected_news
 
 
@@ -208,102 +223,121 @@ def hot_topic_search_news(collection_name,option):
         ]
 
         # 建立一個空的列表來保存查詢結果
+        # 建立一個空的列表來保存查詢結果
         keyword_news_data = []
-    
-        news_data = list(db[collection_name].aggregate(pipeline))
-        keyword_news_data.extend(news_data)  # 把查詢結果加入列表
+
+        for collection_name in total_subject:
+                news_data = list(db[collection_name].aggregate(pipeline))
+                keyword_news_data.extend(news_data)  # 把查詢結果加入列表
+                
         # 提取新聞標題和摘要文本
         news_text = [news['combined_text'] for news in keyword_news_data]
 
         # 計算TF-IDF相似性分數
         similarity_scores = calculate_tfidf(news_text, keyword)
 
+        
         # 把相似性分數加回每個新聞的資料中
         for i, news in enumerate(keyword_news_data):
             news['document']['similarity'] = similarity_scores[i]
 
-        # 按照相似度和時間戳排序
-        keyword_news_data.sort(key=lambda x: (x['document']['similarity'], x['timestamp']), reverse=True)
+        df_keyword_news_data = convert_to_dataframe(keyword_news_data)
+        
+        result = hot_run_kmeans_from_df(df_keyword_news_data,len(df_keyword_news_data)//3)
 
+        # 按照相似度和時間戳排序
+        
+        #明天要改這個
+        result.sort(key=lambda x: (x['similarity'], x['timestamp']), reverse=True)
         if keyword_news_data:
-            keyword_news_data[:] = keyword_news_data[:4]
-            # 將相似度最高的前10篇新聞添加到selected_news字典中
-            selected_news[keyword] = [news['document'] for news in keyword_news_data]
+            selected_news[keyword] = [news for news in result[:4]]
+            
     return selected_news
 
+
+kw_list=[]
+ws = WS("./data")
+
+def ws_zh(text):
+    words = ws([text])
+    return words[0]
+
+def get_input_keyword(usr_input): 
+    vectorizer =CountVectorizer()
+
+    usr_input=' '.join(ws_zh(usr_input))
+
+    kw_model = KeyBERT(model='distiluse-base-multilingual-cased-v1')
+
+    keywords= kw_model.extract_keywords(usr_input,vectorizer=vectorizer, top_n=3)
+    keywords = [keyword[0] for keyword in keywords]
+    for keyword in keywords:
+        print(keyword)
+    
+    return keywords
 #使用者搜尋 比對 
 #會再改
-def kw_search_news(keyword):
-    selected_news = {}  # 以關鍵字為鍵的存儲最相似的新聞字典
-    for collection_name in total_subject:
-        # 聚合查询，筛选出包含关键字的新闻并计算相似度
+def gen_kw_search_news(usr_input):
+    all_selected_news = {}  # 以關鍵字為鍵的存儲最相似的新聞字典
+    four_selected_news={}
+    all_keywords = get_input_keyword(usr_input)
+
+    for keyword in all_keywords:
+        # 進行聚合查詢，使用一個關鍵字來查詢新聞
         pipeline = [
             {
                 '$match': {
-                    '$or': [
-                        {'title': {'$regex': f'.*{keyword}.*', '$options': 'i'}},
-                        {'summary': {'$regex': f'.*{keyword}.*', '$options': 'i'}}
-                    ]
-                }
-            },
-            {
-                '$addFields': {
-                    'combined_text': {'$concat': ['$title', ' ', '$summary']}
+                    'title': {'$regex': f'.*{keyword}.*', '$options': 'i'}
                 }
             },
             {
                 '$project': {
-                    '_id': 1,
-                    'title': 1,
-                    'summary': 1,
-                    'url': 1,
-                    'image': 1,
-                    'timestamp': 1,
-                    'match_count': {
-                        '$size': {
-                            '$setIntersection': [
-                                {'$split': ['$combined_text', ' ']},
-                                [keyword]
-                            ]
-                        }
-                    },
-                    'similarity': {
-                        '$cond': {
-                            'if': {
-                                '$and': [
-                                    {'$gt': [{'$size': {'$split': ['$combined_text', ' ']}} , 0]},
-                                    {'$ne': ['$combined_text', None]}
-                                ]
-                            },
-                            'then': {
-                                '$divide': [
-                                    {'$ifNull': ['$match_count', 0]},
-                                    {'$size': {'$split': ['$combined_text', ' ']}}
-                                ]
-                            },
-                            'else': 0
-                        }
-                    }
+                    'document': '$$ROOT',  # 將整個文檔添加到document欄位中
+                    'combined_text': {'$concat': ['$title', ' ', '$summary']},  # 新增combined_text字段
+                    'timestamp': '$timestamp'  # 保存時間戳
                 }
             },
             {
-                '$sort': {'timestamp': -1}
+                '$match': {
+                    'combined_text': {'$exists': True}
+                }
             }
         ]
 
-        news_data = list(db[collection_name].aggregate(pipeline))
-        # 将结果添加到 selected_news 字典中
-        for news in news_data:
-            if keyword not in selected_news:
-                selected_news[keyword] = []
-            selected_news[keyword].append(news)
+        # 建立一個空的列表來保存查詢結果
+        keyword_news_data = []
 
-    # 将全部主题的新闻按照相似度排序
-    for news_list in selected_news.values():
-        news_list.sort(key=lambda x: x['similarity'], reverse=True)
-        news_list[:] = news_list[:4]  
+        for collection_name in total_subject:
+                news_data = list(db[collection_name].aggregate(pipeline))
+                keyword_news_data.extend(news_data)  # 把查詢結果加入列表
+                
+        # 提取新聞標題和摘要文本
+        news_text = [news['combined_text'] for news in keyword_news_data]
 
-    return selected_news
+        # 計算TF-IDF相似性分數
+        similarity_scores = calculate_tfidf(news_text, keyword)
+
+        
+        # 把相似性分數加回每個新聞的資料中
+        for i, news in enumerate(keyword_news_data):
+            news['document']['similarity'] = similarity_scores[i]
+
+        df_keyword_news_data = convert_to_dataframe(keyword_news_data)
+        
+        result = hot_run_kmeans_from_df(df_keyword_news_data,len(df_keyword_news_data)//10)
+
+        # 按照相似度和時間戳排序
+        
+        result.sort(key=lambda x: (x['similarity'], x['timestamp']), reverse=True)
+
+          
+        if keyword_news_data:
+            four_selected_news[keyword] = [news for news in result[:4]]
+            all_selected_news[keyword] = [news for news in result]
+            
+    
+    return all_selected_news,four_selected_news
+
 
 #print(kw_search_news("執行長"))
 
