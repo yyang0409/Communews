@@ -74,52 +74,50 @@ function printRatingResult(result,num){
 }
 
 function listenforLike() {
-    var likes = document.querySelectorAll(".like");
-    
-  
-    likes.forEach(like => {
-      like.addEventListener("click", (event) => {
-        event.target.classList.toggle("like-no");
-        event.target.classList.toggle("like-yes");
-        if (event.target.classList.contains("like-yes")) {
-          console.log("Saving Favorite...");
-        } else {
-          console.log("Remove Favorite...");
-        }
-        var likeStatus = event.target.classList.contains("like-yes") ? "Y" : "N";
-        console.log("Like status:", likeStatus);
-        // 獲取data-id的值
-        var dataIdValue = like.dataset.id;
-        // 從 'data-path' 屬性中獲取 'path' 的值
-        var path = event.target.dataset.path;
-        // 將data-id的值透過AJAX POST請求提交到Flask的app.py後端
-        var xhr = new XMLHttpRequest();
-        xhr.open("POST", path, true);
-        xhr.setRequestHeader("Content-Type", "application/json"); 
-        xhr.onreadystatechange = function() {
-          if (xhr.readyState === XMLHttpRequest.DONE) {
-            if (xhr.status === 200) {
-              // 成功回傳時執行的程式碼
-              console.log("成功回傳到Flask後端！");
-              console.log(xhr.responseText); // 如果Flask回傳了任何東西，會在瀏覽器的開發者工具中顯示
-            } else {
-              // 發生錯誤時執行的程式碼
-              console.log("傳送至Flask後端時發生錯誤！");
-              console.log(xhr.status);
-            }
-          }
-        };
-        xhr.send(JSON.stringify({
-          data_id: dataIdValue,
-          like_status: likeStatus,
-          action: 'like'
-        }));
-  
-      });
-    });
-}
+  var likes = document.querySelectorAll(".like");
   
 
+  likes.forEach(like => {
+    like.addEventListener("click", (event) => {
+      event.target.classList.toggle("like-no");
+      event.target.classList.toggle("like-yes");
+      if (event.target.classList.contains("like-yes")) {
+        console.log("Saving Favorite...");
+      } else {
+        console.log("Remove Favorite...");
+      }
+      var likeStatus = event.target.classList.contains("like-yes") ? "Y" : "N";
+      console.log("Like status:", likeStatus);
+      // 獲取data-id的值
+      var dataIdValue = like.dataset.id;
+      // 從 'data-path' 屬性中獲取 'path' 的值
+      var path = event.target.dataset.path;
+      // 將data-id的值透過AJAX POST請求提交到Flask的app.py後端
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", path, true);
+      xhr.setRequestHeader("Content-Type", "application/json"); 
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+          if (xhr.status === 200) {
+            // 成功回傳時執行的程式碼
+            console.log("成功回傳到Flask後端！");
+            console.log(xhr.responseText); // 如果Flask回傳了任何東西，會在瀏覽器的開發者工具中顯示
+          } else {
+            // 發生錯誤時執行的程式碼
+            console.log("傳送至Flask後端時發生錯誤！");
+            console.log(xhr.status);
+          }
+        }
+      };
+      xhr.send(JSON.stringify({
+        data_id: dataIdValue,
+        like_status: likeStatus,
+        action: 'like'
+      }));
+
+    });
+  });
+}
 
 listenforLike();
 getRating();
