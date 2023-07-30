@@ -504,3 +504,15 @@ header{
 .collection-card{
     box-shadow:0 2px 5px 0 rgba(0,0,0,0.16),0 2px 10px 0 rgba(0,0,0,0.12)
 }
+
+
+/* collection css */
+.btn-choose-keyword{
+    background-color: #526d82;
+    color: #fff;
+}
+
+.btn-choose-keyword:hover{
+    background-color:#526d82d8;
+    color: #fff;
+}
