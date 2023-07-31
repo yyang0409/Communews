@@ -199,6 +199,7 @@ def hot_run_kmeans(news_summary,cluster_num):
 
 def newest_run_kmeans_from_df(df,cluster_num):
     #print(df)
+    
     # 提取'id'字段的值并存储在列表中
     news_summary_list = df['summary'].tolist()
     news_id_list = df['_id'].tolist()
@@ -244,6 +245,8 @@ def newest_run_kmeans_from_df(df,cluster_num):
 
 def hot_run_kmeans_from_df(df,cluster_num):
     #print(df)
+    #print(df.info())
+
     # 提取'id'字段的值并存储在列表中
     news_summary_list = df['summary'].tolist()
     news_id_list = df['_id'].tolist()

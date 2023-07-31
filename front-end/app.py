@@ -21,7 +21,7 @@ def connect_db():
             "host": "127.0.0.1",
             "port": 3306,
             "user": "root",
-            "password": "Jeter#622019",
+            "password": "109403502",
             "db": "communews",
             "charset": "utf8mb4",
             "cursorclass": pymysql.cursors.DictCursor
@@ -287,49 +287,49 @@ def index():
             if action =='rating':
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
-        else:
-            print("這邊還沒做 html要多加彈跳提醒登入方塊")
-            return "這邊還沒做 html要多加彈跳提醒登入方塊"
 
 
 
-@app.route("/hot", methods=['GET','POST'])
+@app.route("/hot", methods=['GET', 'POST'])
 def hot():
-    like_status_dict={}
+    like_status_dict = {}
     stars_count_dict = {}  # 用於存儲每個新聞的星星數量
     if request.method == 'GET':
         if g.user.is_authenticated:
-            data =hot_all_search_news("daily")
+            data, all_data = hot_all_search_news("daily")
             like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in data.keys()}
             # 計算每個新聞的星星數量
-            for keyword in data.keys():
-                news_id = data[keyword][0]['_id']
-                have, score = news_score_loader(g.user.user_id, news_id)
-                if have == 'Y':
-                    stars_count_dict[news_id] = score
-                else:
-                    stars_count_dict[news_id] = 0
-            return render_template('hot.html', data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+            for keyword, news_list in data.items():
+                for news_dict in news_list:
+                    news_id = news_dict.get('_id')
+                    # 將 ObjectId 轉換成字符串形式
+                    str_news_id = str(news_id)
+                    have, score = news_score_loader(g.user.user_id, str_news_id)
+                    #print(str_news_id, have, score)
+
+                    if have == 'Y':
+                        stars_count_dict[news_id] = score
+                    else:
+                        stars_count_dict[news_id] = 0
+            return render_template('hot.html', data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user, all_data=all_data)
         else:
-            data =hot_all_search_news("daily")
-            return render_template('hot.html', data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+            data, all_data = hot_all_search_news("daily")
+            return render_template('hot.html', data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user, all_data=all_data)
     elif request.method == 'POST':
         if g.user.is_authenticated:
             data = request.json
             action = data.get('action')
-            if action=='like':
+            if action == 'like':
                 do_like(request)
                 # 回傳JSON格式的回應給前端
                 return jsonify({'message': '收藏成功！'})
-            elif action =='rating':
+            elif action == 'rating':
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
-        else:
-            print("這邊還沒做 html要多加彈跳提醒登入方塊")
-            return "這邊還沒做 html要多加彈跳提醒登入方塊"
     else:
         # 在其他情況下也要處理返回有效的回應
         return "Invalid request method"
+
 
 # 熱門頁面-每週
 @app.route("/hot/當週熱門", methods=['GET','POST'])
@@ -338,19 +338,24 @@ def everyweek():
     stars_count_dict = {}  # 用於存儲每個新聞的星星數量
     if request.method == 'GET':
         if g.user.is_authenticated:
-            data =hot_all_search_news("weekly")
+            data ,all_data=hot_all_search_news("weekly")
             like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in data.keys()}
             # 計算每個新聞的星星數量
-            for keyword in data.keys():
-                news_id = data[keyword][0]['_id']
-                have, score = news_score_loader(g.user.user_id, news_id)
-                if have == 'Y':
-                    stars_count_dict[news_id] = score
-                else:
-                    stars_count_dict[news_id] = 0
+            for keyword, news_list in data.items():
+                for news_dict in news_list:
+                    news_id = news_dict.get('_id')
+                    # 將 ObjectId 轉換成字符串形式
+                    str_news_id = str(news_id)
+                    have, score = news_score_loader(g.user.user_id, str_news_id)
+                    #print(str_news_id, have, score)
+
+                    if have == 'Y':
+                        stars_count_dict[news_id] = score
+                    else:
+                        stars_count_dict[news_id] = 0
             return render_template('hot_everyweek.html', data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
         else:
-            data =hot_all_search_news("weekly")
+            data ,all_data=hot_all_search_news("weekly")
             return render_template('hot_everyweek.html', data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
@@ -363,9 +368,6 @@ def everyweek():
             elif action =='rating':
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
-        else:
-            print("這邊還沒做 html要多加彈跳提醒登入方塊")
-            return "這邊還沒做 html要多加彈跳提醒登入方塊"
     else:
         # 在其他情況下也要處理返回有效的回應
         return "Invalid request method"
@@ -377,19 +379,24 @@ def everymonth():
     stars_count_dict = {}  # 用於存儲每個新聞的星星數量
     if request.method == 'GET':
         if g.user.is_authenticated:
-            data =hot_all_search_news("monthly")
+            data,all_data =hot_all_search_news("monthly")
             like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in data.keys()}
             # 計算每個新聞的星星數量
-            for keyword in data.keys():
-                news_id = data[keyword][0]['_id']
-                have, score = news_score_loader(g.user.user_id, news_id)
-                if have == 'Y':
-                    stars_count_dict[news_id] = score
-                else:
-                    stars_count_dict[news_id] = 0
+            for keyword, news_list in data.items():
+                for news_dict in news_list:
+                    news_id = news_dict.get('_id')
+                    # 將 ObjectId 轉換成字符串形式
+                    str_news_id = str(news_id)
+                    have, score = news_score_loader(g.user.user_id, str_news_id)
+                    #print(str_news_id, have, score)
+
+                    if have == 'Y':
+                        stars_count_dict[news_id] = score
+                    else:
+                        stars_count_dict[news_id] = 0
             return render_template('hot_everymonth.html', data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
         else:
-            data =hot_all_search_news("monthly")
+            data ,all_data=hot_all_search_news("monthly")
             return render_template('hot_everymonth.html', data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
@@ -402,9 +409,6 @@ def everymonth():
             elif action =='rating':
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
-        else:
-            print("這邊還沒做 html要多加彈跳提醒登入方塊")
-            return "這邊還沒做 html要多加彈跳提醒登入方塊"
     else:
         # 在其他情況下也要處理返回有效的回應
         return "Invalid request method"
@@ -415,12 +419,12 @@ def show():
     if request.method == 'POST':
         combined_data = {}
         keyword = request.form.get("keyword", "")
-        data =gen_kw_search_news(keyword)
+        data,all_data =gen_kw_search_news(keyword)
         combined_data.update(data)
         extend_keywords=word2vec(keyword)
         if extend_keywords!="None":
             for extend_keyword in extend_keywords:
-                extend_data=gen_kw_search_news(extend_keyword)
+                extend_data,all_extend_data_news=gen_kw_search_news(extend_keyword)
                 combined_data.update(extend_data)
         return render_template('show.html',combined_data=combined_data,user=g.user)
     
@@ -458,9 +462,7 @@ def topic(topicname):
             if action =='rating':
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
-        else:
-            print("這邊還沒做 html要多加彈跳提醒登入方塊")
-            return "這邊還沒做 html要多加彈跳提醒登入方塊"
+ 
 
 # topic的熱門新聞頁面
 @app.route("/topic/<topicname>/熱門", methods=['GET','POST'])
@@ -469,19 +471,24 @@ def topicHot(topicname):
     stars_count_dict = {}  # 用於存儲每個新聞的星星數量
     if request.method == 'GET':
         if g.user.is_authenticated:
-            data=hot_topic_search_news(topicname,'daily')
+            data,all_data=hot_topic_search_news(topicname,'daily')
             like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in data.keys()}
             # 計算每個新聞的星星數量
-            for keyword in data.keys():
-                news_id = data[keyword][0]['_id']
-                have, score = news_score_loader(g.user.user_id, news_id)
-                if have == 'Y':
-                    stars_count_dict[news_id] = score
-                else:
-                    stars_count_dict[news_id] = 0
+            for keyword, news_list in data.items():
+                for news_dict in news_list:
+                    news_id = news_dict.get('_id')
+                    # 將 ObjectId 轉換成字符串形式
+                    str_news_id = str(news_id)
+                    have, score = news_score_loader(g.user.user_id, str_news_id)
+                    #print(str_news_id, have, score)
+
+                    if have == 'Y':
+                        stars_count_dict[news_id] = score
+                    else:
+                        stars_count_dict[news_id] = 0
             return render_template('topic_hot.html',topicname=topicname, data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
         else:
-            data=hot_topic_search_news(topicname,'daily')
+            data,all_data=hot_topic_search_news(topicname,'daily')
             return render_template('topic_hot.html',topicname=topicname, data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
@@ -494,9 +501,7 @@ def topicHot(topicname):
             elif action =='rating':
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
-        else:
-            print("這邊還沒做 html要多加彈跳提醒登入方塊")
-            return "這邊還沒做 html要多加彈跳提醒登入方塊"
+
     else:
         # 在其他情況下也要處理返回有效的回應
         return "Invalid request method"
@@ -507,19 +512,24 @@ def topic_hot_week(topicname):
     stars_count_dict = {}  # 用於存儲每個新聞的星星數量
     if request.method == 'GET':
         if g.user.is_authenticated:
-            data=hot_topic_search_news(topicname,'weekly')
+            data,all_data=hot_topic_search_news(topicname,'weekly')
             like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in data.keys()}
             # 計算每個新聞的星星數量
-            for keyword in data.keys():
-                news_id = data[keyword][0]['_id']
-                have, score = news_score_loader(g.user.user_id, news_id)
-                if have == 'Y':
-                    stars_count_dict[news_id] = score
-                else:
-                    stars_count_dict[news_id] = 0
+            for keyword, news_list in data.items():
+                for news_dict in news_list:
+                    news_id = news_dict.get('_id')
+                    # 將 ObjectId 轉換成字符串形式
+                    str_news_id = str(news_id)
+                    have, score = news_score_loader(g.user.user_id, str_news_id)
+                    #print(str_news_id, have, score)
+
+                    if have == 'Y':
+                        stars_count_dict[news_id] = score
+                    else:
+                        stars_count_dict[news_id] = 0
             return render_template('topic_hot_week.html',topicname=topicname, data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
         else:
-            data=hot_topic_search_news(topicname,'weekly')
+            data,all_data=hot_topic_search_news(topicname,'weekly')
             return render_template('topic_hot_week.html',topicname=topicname, data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
@@ -532,9 +542,7 @@ def topic_hot_week(topicname):
             elif action =='rating':
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
-        else:
-            print("這邊還沒做 html要多加彈跳提醒登入方塊")
-            return "這邊還沒做 html要多加彈跳提醒登入方塊"
+
     else:
         # 在其他情況下也要處理返回有效的回應
         return "Invalid request method"
@@ -545,19 +553,24 @@ def topic_hot_month(topicname):
     stars_count_dict = {}  # 用於存儲每個新聞的星星數量
     if request.method == 'GET':
         if g.user.is_authenticated:
-            data=hot_topic_search_news(topicname,'monthly')
+            data,all_data=hot_topic_search_news(topicname,'monthly')
             like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in data.keys()}
-            #計算每個新聞的星星數量
-            for keyword in data.keys():
-                news_id = data[keyword][0]['_id']
-                have, score = news_score_loader(g.user.user_id, news_id)
-                if have == 'Y':
-                    stars_count_dict[news_id] = score
-                else:
-                    stars_count_dict[news_id] = 0
+            # 計算每個新聞的星星數量
+            for keyword, news_list in data.items():
+                for news_dict in news_list:
+                    news_id = news_dict.get('_id')
+                    # 將 ObjectId 轉換成字符串形式
+                    str_news_id = str(news_id)
+                    have, score = news_score_loader(g.user.user_id, str_news_id)
+                    #print(str_news_id, have, score)
+
+                    if have == 'Y':
+                        stars_count_dict[news_id] = score
+                    else:
+                        stars_count_dict[news_id] = 0
             return render_template('topic_hot_month.html',topicname=topicname, data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
         else:
-            data=hot_topic_search_news(topicname,'monthly')
+            data,all_data=hot_topic_search_news(topicname,'monthly')
             return render_template('topic_hot_month.html',topicname=topicname, data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
@@ -570,9 +583,7 @@ def topic_hot_month(topicname):
             elif action =='rating':
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
-        else:
-            print("這邊還沒做 html要多加彈跳提醒登入方塊")
-            return "這邊還沒做 html要多加彈跳提醒登入方塊"
+
     else:
         # 在其他情況下也要處理返回有效的回應
         return "Invalid request method"
@@ -583,31 +594,96 @@ def recommendation():
     return render_template('recommendation.html',user=g.user)
 
 
-     
-@app.route("/collection", methods=['GET','POST'])
+      
+@app.route("/collection/", defaults={'keyword': None}, methods=['GET','POST'])
+@app.route("/collection/<string:keyword>", methods=['GET','POST'])
 @login_required
-def collection():
+def collection(keyword):
+    stars_count_dict = {}
     collection_kw_nm=user_collection_loader()
     if request.method == 'GET':
-        data,four_news=gen_kw_search_news(collection_kw_nm[0][1])
-        #print(data)
-        return render_template('collection.html',collection_kw_nm=collection_kw_nm,data=data,user=g.user)
+        if g.user.is_authenticated:
+            data,all_data=gen_kw_search_news(collection_kw_nm[0][1])
+            # 計算每個新聞的星星數量
+            for keyword, news_list in all_data.items():
+                for news_dict in news_list:
+                    news_id = news_dict.get('_id')
+                    # 將 ObjectId 轉換成字符串形式
+                    str_news_id = str(news_id)
+                    have, score = news_score_loader(g.user.user_id, str_news_id)
+                    #print(str_news_id, have, score)
+
+                    if have == 'Y':
+                        stars_count_dict[news_id] = score
+                    else:
+                        stars_count_dict[news_id] = 0
+            #print(data)
+            return render_template('collection.html',keyword=keyword,collection_kw_nm=collection_kw_nm,all_data=all_data,stars_count_dict=stars_count_dict,user=g.user)
     elif request.method == 'POST':
-        selected_value = request.form.get("selectedValue")
-        #print(selected_value)
-        data,four_news=gen_kw_search_news(collection_kw_nm[int(selected_value)-1][1])
-        return render_template('collection.html',collection_kw_nm=collection_kw_nm,data=data,user=g.user)
+        if g.user.is_authenticated:
+            data = request.json
+            action = data.get('action')
+            if action=='like':
+                do_like(request)
+                # 回傳JSON格式的回應給前端
+                #return jsonify({'message': '收藏成功！'})
+            elif action =='rating':
+                do_rating(request)
+                #return jsonify({'message': "評分成功"})
+            
+            data,all_data=gen_kw_search_news(keyword)
+            # 計算每個新聞的星星數量
+            for keyword, news_list in all_data.items():
+                for news_dict in news_list:
+                    news_id = news_dict.get('_id')
+                    # 將 ObjectId 轉換成字符串形式
+                    str_news_id = str(news_id)
+                    have, score = news_score_loader(g.user.user_id, str_news_id)
+                    #print(str_news_id, have, score)
+
+                    if have == 'Y':
+                        stars_count_dict[news_id] = score
+                    else:
+                        stars_count_dict[news_id] = 0
+            #print(data)
+            return render_template('collection.html',collection_kw_nm=collection_kw_nm,all_data=all_data,stars_count_dict=stars_count_dict,user=g.user)    
     
-@app.route("/collection/熱門/當週")
-@login_required
-def collection_week():
-    return render_template('collection_week.html')
+@app.route("/hashtag/<keyword>", methods=['GET','POST'])
+def hashtag(keyword):
+    stars_count_dict = {}
+    like_status_dict={}
+    if request.method == 'GET':
+        if g.user.is_authenticated:
+            data,all_data =gen_kw_search_news(keyword)
+            like_status_dict = {keyword: collection_loader(keyword)[0]}
+            # 計算每個新聞的星星數量
+            for keyword, news_list in all_data.items():
+                for news_dict in news_list:
+                    news_id = news_dict.get('_id')
+                    # 將 ObjectId 轉換成字符串形式
+                    str_news_id = str(news_id)
+                    have, score = news_score_loader(g.user.user_id, str_news_id)
+                    #print(str_news_id, have, score)
 
-@app.route("/collection/熱門/當月")
-@login_required
-def collection_month():
-    return render_template('collection_month.html')    
-
+                    if have == 'Y':
+                        stars_count_dict[news_id] = score
+                    else:
+                        stars_count_dict[news_id] = 0
+            return render_template('hashtag.html',all_data=all_data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+        else:
+            data,all_data =gen_kw_search_news(keyword)
+            return render_template('hashtag.html',all_data=all_data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+    elif request.method == 'POST':
+        if g.user.is_authenticated:
+            data = request.json
+            action = data.get('action')
+            if action=='like':
+                do_like(request)
+                # 回傳JSON格式的回應給前端
+                return jsonify({'message': '收藏成功！'})
+            elif action =='rating':
+                do_rating(request)
+                return jsonify({'message': "評分成功"})
 @app.route("/logout")
 @login_required
 def logout():
