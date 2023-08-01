@@ -115,131 +115,87 @@
         <div class="topic fs-2 mt-2">
           <!-- 首頁預設顯示收藏，即不顯示任何新聞，User選擇要看的關鍵字後才顯示新聞-->
           <span># 收藏</span>
-          <!-- 選擇關鍵字後變成該關鍵字 -->
-          <span class="currentkeyword">羽球</span>
-
+            {% if collection_kw_nm[0]==1 and keyword == None %} 
+            <!-- 選擇關鍵字後變成該關鍵字 -->
+            <span class="currentkeyword">{{ collection_kw_nm[0][1] }}</span>
+            {% else  %}
+            <span class="currentkeyword">{{ keyword }}</span>
+            {% endif %}
           <button class="btn btn-lg btn-choose-keyword" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample">
             選擇您收藏的關鍵字
           </button>
         </div> 
           
         <!-- 關鍵字選單 -->
+        
         <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
           <div class="offcanvas-header">
             <span class="offcanvas-title fs-2" id="offcanvasExampleLabel">關鍵字清單</span>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
           </div>
           <div class="offcanvas-body">
-            <div class="list-group">                
-              <form action="/collection/{keyword}">
-                <button type="submit" class="list-group-item list-group-item-action" id="羽球" >
-                  <div class="like like-yes" data-id="{{keyword}}" style="display:inline-block;"></div>
-                  <span class="keyword fs-1 ms-3" >羽球</span>
-                </button>                
-              </form>
-
-              <form action="/collection/{keyword}">
-                <button type="submit" class="list-group-item list-group-item-action" id="{{keyword}}" >
-                  <div class="like like-yes" data-id="{{keyword}}" style="display:inline-block;"></div>
-                  <span class="keyword fs-3 ms-3" >{{keyword}}</span>
-                </button>                
-              </form>
-
-              <form action="/collection/{keyword}">
-                <button type="submit" class="list-group-item list-group-item-action" id="{{keyword}}" >
-                  <div class="like like-yes" data-id="{{keyword}}" style="display:inline-block;"></div>
-                  <span class="keyword fs-3 ms-3" >{{keyword}}</span>
-                </button>                
-              </form>
-              
-
+            <div class="list-group">            
+              {% for keyword in collection_kw_nm %}    
+                <form action="/collection/{{ keyword[1] }}" method="POST" enctype="application/json">
+                  <div class="like like-yes" id="{{ keyword[0] }}" path="/collection/" style="display:inline-block;"></div>
+                  <button type="submit" class="list-group-item list-group-item-action" id="{{ keyword[1] }}">
+                    <span class="keyword fs-1 ms-3">{{ keyword[1] }}</span>
+                  </button>                
+                </form>
+              {% endfor %}
             </div>   
             <!-- end of list-group -->
           </div>
           <!-- end of offcanvas-body -->
         </div>
         <!-- end of offcanvas -->
+        
       
 
       <!-- 後端要回傳關鍵字到id -->
       <!-- 後端要回傳該關鍵字的新聞 -->
+      {% for keyword, news_list in all_data.items() %}
       <div class="container" id="{{keyword}}">
         <div id="newest" class="collection-container menu collection-padding collection-card">
           <div id="newest-card">
             <!--card column-->
-            
-            <div class="collection-column mb-2">
-              <!-- Card section -->
-              <div class="card h-100 pb-2" style="width: 675px;">
-                <div class="row g-0">
-                  <div class="col col-md-4 pb-1" style="height:fit-content;">
-                    <a href="">
-                      
+            {% for news in news_list %}
+          <div class="col-6 mb-2 d-flex align-items-center justify-content-center">
+            <!-- Card section -->
+            <div class="card h-100 pb-2" style="width: 675px;">
+              <div class="row g-0">
+                <div class="h-75 col col-md-4 pb-1 d-flex align-items-center justify-content-center rounded-start">
+                  <a href="{{ news.url }}">
+                    {% if news.image !="None" %}
+                      <img src="{{ news.image }}" class="img-fluid rounded">
+                    {% else %}
                       <img src="{{url_for('static',filename='img/44300_nobg.png')}}" class="img-fluid rounded" style="object-fit: cover;">
-                      
-                    </a>  
+                    {% endif %}
+                  </a>         
+                </div>
+                <!-- card 內容 -->
+                <div class="col-md-8 col-sm-12 h-75 rounded-bottom" style="background-color: #C2C8C6;">
+                  <div class="card-body">
+                    <a class="card-title" href="{{news.url}}" >{{news.title}}</a>
+                    <p class="card-text mt-2">
+                      {% if news.summary|length > 100 %}
+                        {{ news.summary[:100] }}...<a href="{{news.url}}">查看完整內容</a>
+                      {% else %}
+                        {{ news.summary }}
+                      {% endif %}
+                    </p>
+                    <a href="{{ptt_url}}" class="card-link" target="_blank">{{ptt_title}}</a>
                   </div>
-                  <!-- card 內容 -->
-                  <div class="col-md-8 col-sm-12">
-                    <div class="card-body">
-                      <a class="card-title" href="{{url}}" >{{title}}</a>
-                      <p class="card-text mt-2">
-                       
-                          <a href="{{url}}">查看完整內容</a>
+                </div>
 
-                      </p>
-                      <a href="{{ptt_url}}" class="card-link" target="_blank">{{ptt_title}}</a>
-                    </div>
-                  </div>
-
-                  <!-- user 已登入 -->                
-                   <!-- <form class="rating" data-id="{{_id}}" data-topic="{{ topic }} "data-score="{{ rating}}" data-path="/">
-                    <p class="star" name="{{_id}}">&#9734;</p>
-                    <p class="star" name="{{_id}}">&#9734;</p>
-                    <p class="star" name="{{_id}}">&#9734;</p>
-                    <p class="star" name="{{_id}}">&#9734;</p>
-                    <p class="star" name="{{_id}}">&#9734;</p>
-                    <span class="stars-score" id="{{_id}}"></span>
-                  </form> -->
-    
-                  <!-- 評分 -->
-                   <!-- User未登入 -->                
-                   <form class="no-rating" data-id="{{_id}}">
-                    <p class="star" name="{{_id}}" data-bs-toggle="modal" data-bs-target="#exampleModal">&#9734;</p>
-                    <p class="star" name="{{_id}}" data-bs-toggle="modal" data-bs-target="#exampleModal">&#9734;</p>
-                    <p class="star" name="{{_id}}" data-bs-toggle="modal" data-bs-target="#exampleModal">&#9734;</p>
-                    <p class="star" name="{{_id}}" data-bs-toggle="modal" data-bs-target="#exampleModal">&#9734;</p>
-                    <p class="star" name="{{_id}}" data-bs-toggle="modal" data-bs-target="#exampleModal">&#9734;</p>
-                    <span class="stars-score" id="{{_id}}"></span> 
-                    
-                    <!-- Modal -->
-                    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="false">
-                      <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                          <div class="modal-header" >
-                            <img src="{{url_for('static',filename='img/44300_gray.png')}}" alt="logo" style='height: 20%; width: 20%; object-fit: contain'>
-                            <p><h1 class="modal-title fs-5" id="exampleModalLabel" style="color: black;">登入後即享有<b>Communews</b>的所有功能</h1></p>
-                            <!-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> -->
-                          </div>
-                          <div class="modal-body" style="color: black;">
-                            <ul>
-                              <li>
-                                <p>在「推薦」可查看我們推薦給您的新聞</p>
-                              </li>
-                              <li>
-                                <p>隨時<span>收藏</span>感興趣的主題</p>
-                              </li>
-                            </ul>
-                          </div>
-                          <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">不用了。謝謝</button>
-                            <a class="btn btn-primary" href="/login" role="button">登入</a>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <!-- end of modal -->
-                  </form>
+                <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ stars_count_dict[news._id] }}" data-path="/hashtag/{{keyword}}">
+                  <p class="star" name="{{news._id}}">&#9734;</p>
+                  <p class="star" name="{{news._id}}">&#9734;</p>
+                  <p class="star" name="{{news._id}}">&#9734;</p>
+                  <p class="star" name="{{news._id}}">&#9734;</p>
+                  <p class="star" name="{{news._id}}">&#9734;</p>
+                  <span class="stars-score" id="{{news._id}}"></span>
+                </form> 
 
 
                   <div class="col-6 ptt-link">
@@ -254,14 +210,14 @@
               <!-- end of card section -->
             </div>
             <!-- end of column -->  
-     
+            {% endfor %} 
           </div>
           <!-- end of newest card -->
         </div>  
         <!-- end of newest -->
       </div> 
       <!-- end of keyword container -->
-
+      {% endfor %}
       </div> 
       <!-- end of row -->
     </div>
@@ -274,7 +230,6 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="{{url_for('static',filename='js/collection.js')}}" defer></script>
-  <script src="{{url_for('static',filename='js/hot_selection.js')}}" defer></script>
   
   
 </body>

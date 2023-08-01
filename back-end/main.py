@@ -92,11 +92,13 @@ def url(topic,subtopic,spider_url):
 
 def hot_kw(topic):
     current_date =(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")
+    start_date=(datetime.now()- timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    end_date=datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     if topic == '綜合全部':
-        kw_list=get_tol_col_data()
+        kw_list=get_tol_col_data(start_date,end_date)
         all_keywords=calculate_keywords(kw_list)
     else:
-        kw_list=get_col_data(topic)
+        kw_list=get_col_data(topic,start_date,end_date)
         all_keywords=calculate_keywords(kw_list)
     #print(all_keywords,current_date)
     save_to_db("關鍵每一天",topic,kw_dataframe(all_keywords,current_date))  #放進資料庫
