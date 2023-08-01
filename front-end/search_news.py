@@ -111,7 +111,7 @@ def calculate_tfidf(news_text, keywords):
 def hot_all_search_news(option):
     all_keywords = get_subject_col_data("綜合全部", option)
     selected_news = {}  # 存儲最相似的新聞
-
+    all_selected_news={}
     current_datetime = datetime.now()
 
     if option == 'daily':
@@ -177,7 +177,8 @@ def hot_all_search_news(option):
           
         if keyword_news_data:
             selected_news[keyword] = [news for news in result[:4]]
-    return selected_news
+            all_selected_news[keyword] = [news for news in result]
+    return selected_news,all_selected_news
 
 
 #print(hot_all_search_news("daily"))
@@ -185,7 +186,7 @@ def hot_all_search_news(option):
 def hot_topic_search_news(collection_name,option):
     all_keywords = get_subject_col_data(collection_name, option)
     selected_news = {}  # 存儲最相似的新聞
-
+    all_selected_news={}
     current_datetime = datetime.now()
 
     if option == 'daily':
@@ -251,8 +252,8 @@ def hot_topic_search_news(collection_name,option):
         result.sort(key=lambda x: (x['similarity'], x['timestamp']), reverse=True)
         if keyword_news_data:
             selected_news[keyword] = [news for news in result[:4]]
-            
-    return selected_news
+            all_selected_news[keyword] = [news for news in result]
+    return selected_news,all_selected_news
 
 
 kw_list=[]
@@ -336,7 +337,7 @@ def gen_kw_search_news(usr_input):
             all_selected_news[keyword] = [news for news in result]
             
     
-    return all_selected_news,four_selected_news
+    return four_selected_news,all_selected_news
 
 
 #print(kw_search_news("執行長"))

@@ -103,10 +103,8 @@ function RemoveKeyword(){
         console.log("Like status:", likeStatus);
         // 獲取data-id的值
         var dataIdValue = like.dataset.id;
-        console.log(dataIdValue);
         // 從 'data-path' 屬性中獲取 'path' 的值
         var path = event.target.dataset.path;
-        console.log(path);
         // 將data-id的值透過AJAX POST請求提交到Flask的app.py後端
         var xhr = new XMLHttpRequest();
         xhr.open("POST", path, true);

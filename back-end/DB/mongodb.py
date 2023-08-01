@@ -110,23 +110,32 @@ def get_all_data(clientnm,item):
     client.close()
     return item_list
 
-def get_col_data(collection_name):
+def get_col_data(collection_name,start_date,end_date):
     client = MongoClient("mongodb+srv://user1:user1@cluster0.ronm576.mongodb.net/?retryWrites=true&w=majority")
     db_today= client["TodayNews"]
     kw_list=[]
     collection = db_today[collection_name]
-    for document in collection.find({}):
+    # 檢查是否有日期範圍，並套用查詢條件
+    query = {}
+    if start_date and end_date:
+        query["timestamp"] = {"$gte": start_date, "$lt": end_date}
+    for document in collection.find(query):
         kw_list.append(document['new_keyword'])
         
     return  kw_list
 
-def get_tol_col_data():
+def get_tol_col_data(start_date,end_date):
     client = MongoClient("mongodb+srv://user1:user1@cluster0.ronm576.mongodb.net/?retryWrites=true&w=majority")
     db_today= client["TodayNews"]
     kw_list = []
     for collection_name in total_topic:
         collection = db_today[collection_name]
-        for document in collection.find():
+        # 檢查是否有日期範圍，並套用查詢條件
+        query = {}
+        if start_date and end_date:
+            query["timestamp"] = {"$gte": start_date, "$lt": end_date}
+
+        for document in collection.find(query):
             kw_list.append(document['new_keyword'])
     return kw_list
 
