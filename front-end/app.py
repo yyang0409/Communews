@@ -143,6 +143,7 @@ app = Flask(
     static_folder='static',
     static_url_path='/'
 )
+
 #  會使用到session，故為必設
 app.secret_key = 'NCUMIS' 
 login_manager = LoginManager()
@@ -248,38 +249,32 @@ def register():
 # 建立網站首頁的回應方式
 @app.route("/", methods=['GET','POST'])
 def index():
+    db=myclient['Kmeans新聞']
+    collection=db['最新']
     if request.method == 'GET':
-
-        topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經"]
-        combined_data = []
-        # 使用线程池并行处理获取数据
-        with ThreadPoolExecutor() as executor:
-            # 并行获取各个主题的数据
-            futures = [executor.submit(get_DB_News_data, topic,100) for topic in topics]
-            
-            # 收集各个主题的数据
-            for future in futures:
-                combined_data.extend(future.result())
-        news_data=newest_news_serch(combined_data)
-        # 按照timestamp字段排序
-        sorted_data = sorted(news_data, key=lambda x: x['timestamp'], reverse=True)
-        # 取得當前用戶ID
-        current_user_id = g.user.user_id if g.user.is_authenticated else None
-        # 逐一查詢每筆新聞的評分分數，並加回到sorted_data中
-        for news in sorted_data:
-            if current_user_id:
-                # 從資料庫查詢用戶之前對該新聞的評分
-                have, score = news_score_loader(current_user_id, news['_id'])
-                if have == 'Y':
-                    # 如果用戶之前有評分，將評分分數加回到sorted_data中
-                    news['rating'] = score
+        if g.user.is_authenticated:
+            result = collection.find_one({'topic':'綜合全部','date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            #print(result)
+            # 取得當前用戶ID
+            current_user_id = g.user.user_id if g.user.is_authenticated else None
+            # 逐一查詢每筆新聞的評分分數，並加回到sorted_data中
+            for news in result['news_list']:
+                if current_user_id:
+                    # 從資料庫查詢用戶之前對該新聞的評分
+                    have, score = news_score_loader(current_user_id, news['_id'])
+                    if have == 'Y':
+                        # 如果用戶之前有評分，將評分分數加回到sorted_data中
+                        news['rating'] = score
+                    else:
+                        # 如果用戶之前沒有評分，設置評分為0
+                        news['rating'] = 0
                 else:
-                    # 如果用戶之前沒有評分，設置評分為0
+                    # 如果用戶未登入，設置評分為0
                     news['rating'] = 0
-            else:
-                # 如果用戶未登入，設置評分為0
-                news['rating'] = 0
-        return render_template('newest.html', news_list=sorted_data,user=g.user)
+            return render_template('newest.html', news_list=result['news_list'],user=g.user)
+        else:
+            result = collection.find_one({'topic':'綜合全部','date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            return render_template('newest.html', news_list=result['news_list'],user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
             data = request.json
@@ -294,27 +289,29 @@ def index():
 def hot():
     like_status_dict = {}
     stars_count_dict = {}  # 用於存儲每個新聞的星星數量
+    data={}
+    db=myclient['Kmeans新聞']
+    collection=db['當日熱門']
     if request.method == 'GET':
         if g.user.is_authenticated:
-            data, all_data = hot_all_search_news("daily")
-            like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in data.keys()}
-            # 計算每個新聞的星星數量
-            for keyword, news_list in data.items():
-                for news_dict in news_list:
-                    news_id = news_dict.get('_id')
-                    # 將 ObjectId 轉換成字符串形式
-                    str_news_id = str(news_id)
-                    have, score = news_score_loader(g.user.user_id, str_news_id)
-                    #print(str_news_id, have, score)
-
+            results = collection.find({'topic':'綜合全部','date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            for result in results :
+                like_status_dict.update({result['keyword']:collection_loader(result['keyword'])[0]})
+                # 計算每個新聞的星星數量
+                for news in result['news_list']:
+                    have, score = news_score_loader(g.user.user_id, news['_id'])
+                     #print(str_news_id, have, score)
                     if have == 'Y':
-                        stars_count_dict[news_id] = score
+                        stars_count_dict[news['_id']] = score
                     else:
-                        stars_count_dict[news_id] = 0
-            return render_template('hot.html', data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user, all_data=all_data)
+                        stars_count_dict[news['_id']] = 0
+                data[result['keyword']] = result['news_list'][:4]
+            return render_template('hot.html', data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
         else:
-            data, all_data = hot_all_search_news("daily")
-            return render_template('hot.html', data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user, all_data=all_data)
+            results = collection.find({'topic':'綜合全部','date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            for result in results :
+                data[result['keyword']] = result['news_list'][:4]
+            return render_template('hot.html', data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
             data = request.json
@@ -336,27 +333,29 @@ def hot():
 def everyweek():
     like_status_dict={}
     stars_count_dict = {}  # 用於存儲每個新聞的星星數量
+    data={}
+    db=myclient['Kmeans新聞']
+    collection=db['當週熱門']
     if request.method == 'GET':
         if g.user.is_authenticated:
-            data ,all_data=hot_all_search_news("weekly")
-            like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in data.keys()}
-            # 計算每個新聞的星星數量
-            for keyword, news_list in data.items():
-                for news_dict in news_list:
-                    news_id = news_dict.get('_id')
-                    # 將 ObjectId 轉換成字符串形式
-                    str_news_id = str(news_id)
-                    have, score = news_score_loader(g.user.user_id, str_news_id)
-                    #print(str_news_id, have, score)
-
+            results = collection.find({'topic':'綜合全部','date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            for result in results :
+                like_status_dict.update({result['keyword']:collection_loader(result['keyword'])[0]})
+                # 計算每個新聞的星星數量
+                for news in result['news_list']:
+                    have, score = news_score_loader(g.user.user_id, news['_id'])
+                     #print(str_news_id, have, score)
                     if have == 'Y':
-                        stars_count_dict[news_id] = score
+                        stars_count_dict[news['_id']] = score
                     else:
-                        stars_count_dict[news_id] = 0
-            return render_template('hot_everyweek.html', data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+                        stars_count_dict[news['_id']] = 0
+                data[result['keyword']] = result['news_list'][:4]
+            return render_template('hot.html', data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
         else:
-            data ,all_data=hot_all_search_news("weekly")
-            return render_template('hot_everyweek.html', data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+            results = collection.find({'topic':'綜合全部','date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            for result in results :
+                data[result['keyword']] = result['news_list'][:4]
+            return render_template('hot.html', data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
             data = request.json
@@ -377,27 +376,29 @@ def everyweek():
 def everymonth():
     like_status_dict={}
     stars_count_dict = {}  # 用於存儲每個新聞的星星數量
+    data={}
+    db=myclient['Kmeans新聞']
+    collection=db['當月熱門']
     if request.method == 'GET':
         if g.user.is_authenticated:
-            data,all_data =hot_all_search_news("monthly")
-            like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in data.keys()}
-            # 計算每個新聞的星星數量
-            for keyword, news_list in data.items():
-                for news_dict in news_list:
-                    news_id = news_dict.get('_id')
-                    # 將 ObjectId 轉換成字符串形式
-                    str_news_id = str(news_id)
-                    have, score = news_score_loader(g.user.user_id, str_news_id)
-                    #print(str_news_id, have, score)
-
+            results = collection.find({'topic':'綜合全部','date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            for result in results :
+                like_status_dict.update({result['keyword']:collection_loader(result['keyword'])[0]})
+                # 計算每個新聞的星星數量
+                for news in result['news_list']:
+                    have, score = news_score_loader(g.user.user_id, news['_id'])
+                     #print(str_news_id, have, score)
                     if have == 'Y':
-                        stars_count_dict[news_id] = score
+                        stars_count_dict[news['_id']] = score
                     else:
-                        stars_count_dict[news_id] = 0
-            return render_template('hot_everymonth.html', data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+                        stars_count_dict[news['_id']] = 0
+                data[result['keyword']] = result['news_list'][:4]
+            return render_template('hot.html', data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
         else:
-            data ,all_data=hot_all_search_news("monthly")
-            return render_template('hot_everymonth.html', data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+            results = collection.find({'topic':'綜合全部','date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            for result in results :
+                data[result['keyword']] = result['news_list'][:4]
+            return render_template('hot.html', data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
             data = request.json
@@ -413,48 +414,36 @@ def everymonth():
         # 在其他情況下也要處理返回有效的回應
         return "Invalid request method"
 
-
-@app.route("/show",  methods=['POST'])
-def show():
-    if request.method == 'POST':
-        combined_data = {}
-        keyword = request.form.get("keyword", "")
-        data,all_data =gen_kw_search_news(keyword)
-        combined_data.update(data)
-        extend_keywords=word2vec(keyword)
-        if extend_keywords!="None":
-            for extend_keyword in extend_keywords:
-                extend_data,all_extend_data_news=gen_kw_search_news(extend_keyword)
-                combined_data.update(extend_data)
-        return render_template('show.html',combined_data=combined_data,user=g.user)
-    
-    return redirect(url_for('index'))  
-
-
 # topic頁面預設是最新新聞
 @app.route("/topic/<topicname>", methods=['GET','POST'])
 def topic(topicname):
+    db=myclient['Kmeans新聞']
+    collection=db['最新']
     if request.method == 'GET':
-        data=get_DB_News_data(topicname,250)
-        news_data=newest_news_serch(data)
-        news_list = sorted(news_data, key=lambda x: x['timestamp'], reverse=True)
-        # 取得當前用戶ID
-        current_user_id = g.user.user_id if g.user.is_authenticated else None
-        # 逐一查詢每筆新聞的評分分數，並加回到sorted_data中
-        for news in news_list:
-            if current_user_id:
-                # 從資料庫查詢用戶之前對該新聞的評分
-                have, score = news_score_loader(current_user_id, news['_id'])
-                if have == 'Y':
-                    # 如果用戶之前有評分，將評分分數加回到sorted_data中
-                    news['rating'] = score
+        if g.user.is_authenticated:
+            result = collection.find_one({'topic':topicname,'date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            #print(result)
+            # 取得當前用戶ID
+            current_user_id = g.user.user_id if g.user.is_authenticated else None
+            # 逐一查詢每筆新聞的評分分數，並加回到sorted_data中
+            for news in result['news_list']:
+                if current_user_id:
+                    # 從資料庫查詢用戶之前對該新聞的評分
+                    have, score = news_score_loader(current_user_id, news['_id'])
+                    if have == 'Y':
+                        # 如果用戶之前有評分，將評分分數加回到sorted_data中
+                        news['rating'] = score
+                    else:
+                        # 如果用戶之前沒有評分，設置評分為0
+                        news['rating'] = 0
                 else:
-                    # 如果用戶之前沒有評分，設置評分為0
+                    # 如果用戶未登入，設置評分為0
                     news['rating'] = 0
-            else:
-                # 如果用戶未登入，設置評分為0
-                news['rating'] = 0
-        return render_template('topic.html',topicname=topicname,news_list=news_list,user=g.user)
+            return render_template('topic.html', topicname=topicname, news_list=result['news_list'],user=g.user)
+        else:
+            result = collection.find_one({'topic':topicname,'date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            return render_template('topic.html', topicname=topicname, news_list=result['news_list'],user=g.user)
+            #print(result)
     elif request.method == 'POST':
         if g.user.is_authenticated:
             data = request.json
@@ -469,27 +458,29 @@ def topic(topicname):
 def topicHot(topicname):
     like_status_dict={}
     stars_count_dict = {}  # 用於存儲每個新聞的星星數量
+    data={}
+    db=myclient['Kmeans新聞']
+    collection=db['當日熱門']
     if request.method == 'GET':
         if g.user.is_authenticated:
-            data,all_data=hot_topic_search_news(topicname,'daily')
-            like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in data.keys()}
-            # 計算每個新聞的星星數量
-            for keyword, news_list in data.items():
-                for news_dict in news_list:
-                    news_id = news_dict.get('_id')
-                    # 將 ObjectId 轉換成字符串形式
-                    str_news_id = str(news_id)
-                    have, score = news_score_loader(g.user.user_id, str_news_id)
-                    #print(str_news_id, have, score)
-
+            results = collection.find({'topic':topicname,'date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            for result in results :
+                like_status_dict.update({result['keyword']:collection_loader(result['keyword'])[0]})
+                # 計算每個新聞的星星數量
+                for news in result['news_list']:
+                    have, score = news_score_loader(g.user.user_id, news['_id'])
+                     #print(str_news_id, have, score)
                     if have == 'Y':
-                        stars_count_dict[news_id] = score
+                        stars_count_dict[news['_id']] = score
                     else:
-                        stars_count_dict[news_id] = 0
-            return render_template('topic_hot.html',topicname=topicname, data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+                        stars_count_dict[news['_id']] = 0
+                data[result['keyword']] = result['news_list'][:4]
+            return render_template('topic_hot.html', topicname=topicname,data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
         else:
-            data,all_data=hot_topic_search_news(topicname,'daily')
-            return render_template('topic_hot.html',topicname=topicname, data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+            results = collection.find({'topic':topicname,'date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            for result in results :
+                data[result['keyword']] = result['news_list'][:4]
+            return render_template('topic_hot.html', topicname=topicname,data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
             data = request.json
@@ -510,27 +501,29 @@ def topicHot(topicname):
 def topic_hot_week(topicname):
     like_status_dict={}
     stars_count_dict = {}  # 用於存儲每個新聞的星星數量
+    data={}
+    db=myclient['Kmeans新聞']
+    collection=db['當週熱門']    
     if request.method == 'GET':
         if g.user.is_authenticated:
-            data,all_data=hot_topic_search_news(topicname,'weekly')
-            like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in data.keys()}
-            # 計算每個新聞的星星數量
-            for keyword, news_list in data.items():
-                for news_dict in news_list:
-                    news_id = news_dict.get('_id')
-                    # 將 ObjectId 轉換成字符串形式
-                    str_news_id = str(news_id)
-                    have, score = news_score_loader(g.user.user_id, str_news_id)
-                    #print(str_news_id, have, score)
-
+            results = collection.find({'topic':topicname,'date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            for result in results :
+                like_status_dict.update({result['keyword']:collection_loader(result['keyword'])[0]})
+                # 計算每個新聞的星星數量
+                for news in result['news_list']:
+                    have, score = news_score_loader(g.user.user_id, news['_id'])
+                     #print(str_news_id, have, score)
                     if have == 'Y':
-                        stars_count_dict[news_id] = score
+                        stars_count_dict[news['_id']] = score
                     else:
-                        stars_count_dict[news_id] = 0
-            return render_template('topic_hot_week.html',topicname=topicname, data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+                        stars_count_dict[news['_id']] = 0
+                data[result['keyword']] = result['news_list'][:4]
+            return render_template('topic_hot_week.html', topicname=topicname,data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
         else:
-            data,all_data=hot_topic_search_news(topicname,'weekly')
-            return render_template('topic_hot_week.html',topicname=topicname, data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+            results = collection.find({'topic':topicname,'date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            for result in results :
+                data[result['keyword']] = result['news_list'][:4]
+            return render_template('topic_hot_week.html',topicname=topicname, data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
             data = request.json
@@ -551,27 +544,29 @@ def topic_hot_week(topicname):
 def topic_hot_month(topicname):
     like_status_dict={}
     stars_count_dict = {}  # 用於存儲每個新聞的星星數量
+    data={}
+    db=myclient['Kmeans新聞']
+    collection=db['當月熱門']
     if request.method == 'GET':
         if g.user.is_authenticated:
-            data,all_data=hot_topic_search_news(topicname,'monthly')
-            like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in data.keys()}
-            # 計算每個新聞的星星數量
-            for keyword, news_list in data.items():
-                for news_dict in news_list:
-                    news_id = news_dict.get('_id')
-                    # 將 ObjectId 轉換成字符串形式
-                    str_news_id = str(news_id)
-                    have, score = news_score_loader(g.user.user_id, str_news_id)
-                    #print(str_news_id, have, score)
-
+            results = collection.find({'topic':topicname,'date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            for result in results :
+                like_status_dict.update({result['keyword']:collection_loader(result['keyword'])[0]})
+                # 計算每個新聞的星星數量
+                for news in result['news_list']:
+                    have, score = news_score_loader(g.user.user_id, news['_id'])
+                     #print(str_news_id, have, score)
                     if have == 'Y':
-                        stars_count_dict[news_id] = score
+                        stars_count_dict[news['_id']] = score
                     else:
-                        stars_count_dict[news_id] = 0
-            return render_template('topic_hot_month.html',topicname=topicname, data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+                        stars_count_dict[news['_id']] = 0
+                data[result['keyword']] = result['news_list'][:4]
+            return render_template('topic_hot_month.html',topicname=topicname, data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
         else:
-            data,all_data=hot_topic_search_news(topicname,'monthly')
-            return render_template('topic_hot_month.html',topicname=topicname, data=data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+            results = collection.find({'topic':topicname,'date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            for result in results :
+                data[result['keyword']] = result['news_list'][:4]
+            return render_template('topic_hot_month.html', topicname=topicname,data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
             data = request.json
@@ -647,32 +642,117 @@ def collection(keyword):
                         stars_count_dict[news_id] = 0
             #print(data)
             return render_template('collection.html',collection_kw_nm=collection_kw_nm,all_data=all_data,stars_count_dict=stars_count_dict,user=g.user)    
-    
-@app.route("/hashtag/<keyword>", methods=['GET','POST'])
-def hashtag(keyword):
+
+@app.route("/show",  methods=['POST'])
+def show():
+    like_status_dict={}
+    stars_count_dict={}
+    if request.method == 'POST':
+        if g.user.is_authenticated:
+            # 判斷是否是 AJAX POST 請求
+            if request.is_json:
+                data = request.json
+                action = data.get('action')
+                if action == 'like':
+                    do_like(request)
+                    # 回傳 JSON 格式的回應給前端
+                    return jsonify({'message': '收藏成功！'})
+                elif action == 'rating':
+                    do_rating(request)
+                    return jsonify({'message': "評分成功"})
+            else:
+                combined_data = {}
+                keyword = request.form.get("keyword", "")
+                data, all_data = gen_kw_search_news(keyword)
+                combined_data.update(data)
+                extend_keywords = word2vec(keyword)
+                if extend_keywords != "None":
+                    for extend_keyword in extend_keywords:
+                        extend_data, all_extend_data_news = gen_kw_search_news(extend_keyword)
+                        combined_data.update(extend_data)
+
+                like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in combined_data.keys()}
+                # 計算每個新聞的星星數量
+                stars_count_dict = {}
+                for keyword, news_list in combined_data.items():
+                    for news_dict in news_list:
+                        news_id = news_dict.get('_id')
+                        # 將 ObjectId 轉換成字符串形式
+                        str_news_id = str(news_id)
+                        have, score = news_score_loader(g.user.user_id, str_news_id)
+                        if have == 'Y':
+                            stars_count_dict[news_id] = score
+                        else:
+                            stars_count_dict[news_id] = 0
+
+                return render_template('show.html', combined_data=combined_data, user=g.user, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict)
+        else:
+            combined_data = {}
+            keyword = request.form.get("keyword", "")
+            data,all_data =gen_kw_search_news(keyword)
+            combined_data.update(data)
+            extend_keywords=word2vec(keyword)
+            if extend_keywords!="None":
+                for extend_keyword in extend_keywords:
+                    extend_data,all_extend_data_news=gen_kw_search_news(extend_keyword)
+                    combined_data.update(extend_data)
+                    
+            like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in combined_data.keys()}
+            return render_template('show.html',combined_data=combined_data,user=g.user,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict)
+    return redirect(url_for('index'))   
+
+@app.route("/hashtag/<type>/<topicname>/<keyword>", methods=['GET','POST'])
+def hashtag(type,keyword,topicname):
     stars_count_dict = {}
     like_status_dict={}
+    
     if request.method == 'GET':
         if g.user.is_authenticated:
-            data,all_data =gen_kw_search_news(keyword)
-            like_status_dict = {keyword: collection_loader(keyword)[0]}
-            # 計算每個新聞的星星數量
-            for keyword, news_list in all_data.items():
-                for news_dict in news_list:
-                    news_id = news_dict.get('_id')
-                    # 將 ObjectId 轉換成字符串形式
-                    str_news_id = str(news_id)
-                    have, score = news_score_loader(g.user.user_id, str_news_id)
-                    #print(str_news_id, have, score)
-
-                    if have == 'Y':
-                        stars_count_dict[news_id] = score
+            if type!='搜尋':
+                db=myclient['Kmeans新聞']
+                collection=db[type]
+                result = collection.find_one({'topic':topicname,'keyword':keyword,'date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+                like_status_dict = {keyword: collection_loader(result['keyword'])[0]}
+                # 取得當前用戶ID
+                current_user_id = g.user.user_id if g.user.is_authenticated else None
+                # 逐一查詢每筆新聞的評分分數，並加回到sorted_data中
+                for news in result['news_list']:
+                    if current_user_id:
+                        # 從資料庫查詢用戶之前對該新聞的評分
+                        have, score = news_score_loader(current_user_id, news['_id'])
+                        if have == 'Y':
+                            # 如果用戶之前有評分，將評分分數加回到sorted_data中
+                            stars_count_dict[news['_id']] = score
+                        else:
+                            # 如果用戶之前沒有評分，設置評分為0
+                            stars_count_dict[news['_id']] = 0
                     else:
-                        stars_count_dict[news_id] = 0
-            return render_template('hashtag.html',all_data=all_data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+                        # 如果用戶未登入，設置評分為0
+                        stars_count_dict[news['_id']] = 0
+                #print(result['keyword'])
+                return render_template('hashtag.html',type=type,topicname=topicname,keyword=result['keyword'],news_list=result['news_list'],like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+            else:
+                data,all_data =gen_kw_search_news(keyword)
+                like_status_dict = {keyword: collection_loader(keyword)[0]}
+                # 計算每個新聞的星星數量
+                for keyword, news_list in all_data.items():
+                    for news_dict in news_list:
+                        news_id = news_dict.get('_id')
+                        # 將 ObjectId 轉換成字符串形式
+                        str_news_id = str(news_id)
+                        have, score = news_score_loader(g.user.user_id, str_news_id)
+                        #print(str_news_id, have, score)
+
+                        if have == 'Y':
+                            stars_count_dict[news_id] = score
+                        else:
+                            stars_count_dict[news_id] = 0
+                return render_template('hashtag.html',type=type,topicname=topicname,keyword=keyword,news_list=news_list,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
         else:
-            data,all_data =gen_kw_search_news(keyword)
-            return render_template('hashtag.html',all_data=all_data,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+            db=myclient['Kmeans新聞']
+            collection=db[type]
+            result = collection.find_one({'topic':topicname,'keyword':keyword,'date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            return render_template('hashtag.html',type=type,topicname=topicname,keyword=result['keyword'],news_list=result['news_list'],like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
             data = request.json
