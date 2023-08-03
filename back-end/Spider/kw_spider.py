@@ -33,7 +33,7 @@ def grab_yahoo_usersearch(subtopic):
     i = 0
     count = 0
     print('載入資料開始...')
-    while count<30:
+    while count<10:
         i = i+1
         elements = driver.find_elements(By.CSS_SELECTOR, '#stream-container-scroll-template > li> div > div > div > div > h3')
         s_num = len(elements)

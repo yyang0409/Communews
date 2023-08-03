@@ -235,7 +235,7 @@
             <!-- end of 未登入的收藏 -->
             {%endif%}
             <div style="display:inline-block;">
-              <a class="nav-link" href="{{ url_for('hashtag', keyword=keyword) }}">
+              <a class="nav-link" href="{{ url_for('hashtag', keyword=keyword,type='搜尋',topicname='關鍵字') }}">
                 <span class="topic fs-3 ms-3"># {{ keyword }}</span>
               </a> 
             </div>  
@@ -272,7 +272,7 @@
                 </div>
       
                 <!-- 評分 -->
-                <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ news.rating}}"  data-path="/show">
+                <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ stars_count_dict[news._id] }}"  data-path="/show">
                   <p class="star" name="{{news._id}}">&#9734;</p>
                   <p class="star" name="{{news._id}}">&#9734;</p>
                   <p class="star" name="{{news._id}}">&#9734;</p>

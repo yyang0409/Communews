@@ -40,7 +40,7 @@ def get_DB_News_data(topic,num):
 def newest_news_serch(combined_data):
     df = pd.DataFrame(combined_data)
     print(len(df))
-    news_list= newest_run_kmeans_from_df(df,len(df)//5)
+    news_list= newest_run_kmeans_from_df(df,int(len(df)/5))
     return news_list
 def calculate_keywords(keywords_list):
 
@@ -168,7 +168,7 @@ def hot_all_search_news(option):
 
         df_keyword_news_data = convert_to_dataframe(keyword_news_data)
         
-        result = hot_run_kmeans_from_df(df_keyword_news_data,len(df_keyword_news_data)//5)
+        result = hot_run_kmeans_from_df(df_keyword_news_data,len(df_keyword_news_data)//2)
 
         # 按照相似度和時間戳排序
         
@@ -227,9 +227,9 @@ def hot_topic_search_news(collection_name,option):
         # 建立一個空的列表來保存查詢結果
         keyword_news_data = []
 
-        for collection_name in total_subject:
-                news_data = list(db[collection_name].aggregate(pipeline))
-                keyword_news_data.extend(news_data)  # 把查詢結果加入列表
+       
+        news_data = list(db[collection_name].aggregate(pipeline))
+        keyword_news_data.extend(news_data)  # 把查詢結果加入列表
                 
         # 提取新聞標題和摘要文本
         news_text = [news['combined_text'] for news in keyword_news_data]
@@ -243,8 +243,8 @@ def hot_topic_search_news(collection_name,option):
             news['document']['similarity'] = similarity_scores[i]
 
         df_keyword_news_data = convert_to_dataframe(keyword_news_data)
-        
-        result = hot_run_kmeans_from_df(df_keyword_news_data,len(df_keyword_news_data)//3)
+        #print(len(df_keyword_news_data))
+        result = hot_run_kmeans_from_df(df_keyword_news_data,int(len(df_keyword_news_data)//2))
 
         # 按照相似度和時間戳排序
         
@@ -325,7 +325,7 @@ def gen_kw_search_news(usr_input):
 
         df_keyword_news_data = convert_to_dataframe(keyword_news_data)
         
-        result = hot_run_kmeans_from_df(df_keyword_news_data,len(df_keyword_news_data)//10)
+        result = hot_run_kmeans_from_df(df_keyword_news_data,int(len(df_keyword_news_data)/2))
 
         # 按照相似度和時間戳排序
         
