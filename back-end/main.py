@@ -258,7 +258,7 @@ if __name__ == '__main__':
 
 
     #做Kmeans
-   
+    topics=["運動","生活","國際","娛樂","社會地方","健康","綜合全部"] #"科技","健康","財經",
     #熱門系列
     for topic in topics:
         for option in ['daily','weekly','monthly']:

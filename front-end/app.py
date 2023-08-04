@@ -76,7 +76,7 @@ def collection_loader(kw):
 def user_collection_loader():
     db = connect_db()
     cursor = db.cursor()
-    query1 = "SELECT * FROM tb_collection_record WHERE id_user=%s"
+    query1 = "SELECT * FROM tb_collection_record WHERE id_user=%s AND islike ='Y' "
     cursor.execute(query1, (current_user.user_id))
     results1 = cursor.fetchall()  # 獲取所有結果
 
@@ -598,7 +598,10 @@ def collection(keyword):
     collection_kw_nm=user_collection_loader()
     if request.method == 'GET':
         if g.user.is_authenticated:
-            data,all_data=gen_kw_search_news(collection_kw_nm[0][1])
+            if keyword == None :
+                data,all_data=gen_kw_search_news(collection_kw_nm[0][1])
+            else:
+                data,all_data=gen_kw_search_news(keyword)
             # 計算每個新聞的星星數量
             for keyword, news_list in all_data.items():
                 for news_dict in news_list:
@@ -621,28 +624,11 @@ def collection(keyword):
             if action=='like':
                 do_like(request)
                 # 回傳JSON格式的回應給前端
-                #return jsonify({'message': '收藏成功！'})
+                return jsonify({'message': '收藏成功！'})
             elif action =='rating':
                 do_rating(request)
-                #return jsonify({'message': "評分成功"})
-            
-            data,all_data=gen_kw_search_news(keyword)
-            # 計算每個新聞的星星數量
-            for keyword, news_list in all_data.items():
-                for news_dict in news_list:
-                    news_id = news_dict.get('_id')
-                    # 將 ObjectId 轉換成字符串形式
-                    str_news_id = str(news_id)
-                    have, score = news_score_loader(g.user.user_id, str_news_id)
-                    #print(str_news_id, have, score)
-
-                    if have == 'Y':
-                        stars_count_dict[news_id] = score
-                    else:
-                        stars_count_dict[news_id] = 0
-            #print(data)
-            return render_template('collection.html',collection_kw_nm=collection_kw_nm,all_data=all_data,stars_count_dict=stars_count_dict,user=g.user)    
-
+                return jsonify({'message': "評分成功"})
+ 
 @app.route("/show",  methods=['POST'])
 def show():
     like_status_dict={}
