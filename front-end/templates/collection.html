@@ -138,15 +138,15 @@
           <div class="offcanvas-body">
             <div class="list-group">            
               {% for keyword in collection_kw_nm %}    
-                <form action="/collection/{{ keyword[1] }}" method="POST" enctype="application/json">
-                  
+                <form action="/collection/{{ keyword[1] }}" method="GET">
                   <button type="submit" class="list-group-item list-group-item-action" id="{{ keyword[1] }}">
-                    <div class="like like-yes" id="{{ keyword[0] }}" path="/collection/" style="display:inline-block;"></div>
+                    <div class="like like-yes" data-id="{{ keyword[1] }}" data-path="/collection/{{keyword[1]}}" style="display:inline-block;"></div>
                     <span class="keyword fs-1 ms-3">{{ keyword[1] }}</span>
                   </button>                
                 </form>
               {% endfor %}
-            </div>   
+            </div>
+               
             <!-- end of list-group -->
           </div>
           <!-- end of offcanvas-body -->
@@ -191,7 +191,7 @@
                   </div>
                 </div>
 
-                <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ stars_count_dict[news._id] }}" data-path="/hashtag/{{keyword}}">
+                <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ stars_count_dict[news._id] }}" data-path="/collection/{{keyword}}">
                   <p class="star" name="{{news._id}}">&#9734;</p>
                   <p class="star" name="{{news._id}}">&#9734;</p>
                   <p class="star" name="{{news._id}}">&#9734;</p>
