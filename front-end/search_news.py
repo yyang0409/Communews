@@ -291,6 +291,8 @@ def gen_kw_search_news(usr_input):
                     'title': {'$regex': f'.*{keyword}.*', '$options': 'i'}
                 }
             },
+            {"$sort": {"timestamp": -1}},
+            {"$limit": 200},
             {
                 '$project': {
                     'document': '$$ROOT',  # 將整個文檔添加到document欄位中
