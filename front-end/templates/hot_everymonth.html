@@ -243,7 +243,7 @@
               <!-- end of 未登入的收藏 -->
               {%endif%}
               <div style="display:inline-block;">
-                <a class="nav-link" href="{{ url_for('hashtag', keyword=keyword) }}">
+                <a class="nav-link" href="{{ url_for('hashtag', keyword=keyword,type='當月熱門',topicname='綜合全部') }}">
                   <span class="topic fs-3 ms-3"># {{ keyword }}</span>
                 </a> 
               </div>  
