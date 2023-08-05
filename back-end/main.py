@@ -128,32 +128,32 @@ def do_newest_kmeans(topic):
     current_date =(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")
     if topic == '綜合全部':
         after_total_newest_news_list=newest_news_serch(total_newest_news_list)
-        save_to_db('Kmeans新聞','最新',newest_kmeans_news_dataframe(topic,after_total_newest_news_list,current_date))
+        save_to_kmeans_db('Kmeans新聞','最新',newest_kmeans_news_dataframe(topic,after_total_newest_news_list,current_date))
     else:
         topic_newest_news_list=get_DB_News_data(topic)
         total_newest_news_list.extend(topic_newest_news_list)
         after_topic_newest_news_list=newest_news_serch(topic_newest_news_list)
-        save_to_db('Kmeans新聞','最新',newest_kmeans_news_dataframe(topic,after_topic_newest_news_list,current_date))
+        save_to_kmeans_db('Kmeans新聞','最新',newest_kmeans_news_dataframe(topic,after_topic_newest_news_list,current_date))
 def do_hot_kmeans(topic,option):
     current_date =(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")
     if topic == '綜合全部':
         total_hot_news_dic,start_news_date,end_news_date=hot_all_search_news(option)
         for keyword,total_hot_news_list in total_hot_news_dic.items():
             if option =='daily':
-                save_to_db('Kmeans新聞','當日熱門',hot_kmeans_news_dataframe(topic,keyword,total_hot_news_list,start_news_date,end_news_date,current_date))
+                save_to_kmeans_db('Kmeans新聞','當日熱門',hot_kmeans_news_dataframe(topic,keyword,total_hot_news_list,start_news_date,end_news_date,current_date))
             elif option =='weekly':
-                save_to_db('Kmeans新聞','當週熱門',hot_kmeans_news_dataframe(topic,keyword,total_hot_news_list,start_news_date,end_news_date,current_date))
+                save_to_kmeans_db('Kmeans新聞','當週熱門',hot_kmeans_news_dataframe(topic,keyword,total_hot_news_list,start_news_date,end_news_date,current_date))
             else:
-                save_to_db('Kmeans新聞','當月熱門',hot_kmeans_news_dataframe(topic,keyword,total_hot_news_list,start_news_date,end_news_date,current_date))
+                save_to_kmeans_db('Kmeans新聞','當月熱門',hot_kmeans_news_dataframe(topic,keyword,total_hot_news_list,start_news_date,end_news_date,current_date))
     else:
         topic_hot_news_dic,start_news_date,end_news_date=hot_topic_search_news(topic,option)
         for keyword,topic_hot_news_list in topic_hot_news_dic.items():
             if option =='daily':
-                save_to_db('Kmeans新聞','當日熱門',hot_kmeans_news_dataframe(topic,keyword,topic_hot_news_list,start_news_date,end_news_date,current_date))
+                save_to_kmeans_db('Kmeans新聞','當日熱門',hot_kmeans_news_dataframe(topic,keyword,topic_hot_news_list,start_news_date,end_news_date,current_date))
             elif option =='weekly':
-                save_to_db('Kmeans新聞','當週熱門',hot_kmeans_news_dataframe(topic,keyword,topic_hot_news_list,start_news_date,end_news_date,current_date))
+                save_to_kmeans_db('Kmeans新聞','當週熱門',hot_kmeans_news_dataframe(topic,keyword,topic_hot_news_list,start_news_date,end_news_date,current_date))
             else:
-                save_to_db('Kmeans新聞','當月熱門',hot_kmeans_news_dataframe(topic,keyword,topic_hot_news_list,start_news_date,end_news_date,current_date))
+                save_to_kmeans_db('Kmeans新聞','當月熱門',hot_kmeans_news_dataframe(topic,keyword,topic_hot_news_list,start_news_date,end_news_date,current_date))
 
 if __name__ == '__main__':
 

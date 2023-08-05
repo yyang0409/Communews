@@ -14,7 +14,7 @@ from authlib.integrations.flask_client import OAuth
 from search_news import *
 from word2vec import *
 
-myclient = pymongo.MongoClient("mongodb+srv://user1:user1@cluster0.ronm576.mongodb.net/?retryWrites=true&w=majority")
+myclient = pymongo.MongoClient("mongodb+srv://user2:user2@cluster0.zgtguxv.mongodb.net/?retryWrites=true&w=majority")
 # 建立資料庫連接
 def connect_db():
     db_settings = {

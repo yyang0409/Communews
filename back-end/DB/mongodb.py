@@ -59,6 +59,23 @@ def save_to_db(db_name,topic,insert_data):
         print(e) 
     # 關閉與 MongoDB 的連接
     client.close()
+    
+def save_to_kmeans_db(db_name,topic,insert_data):
+    # 連接到 MongoDB
+    client = MongoClient("mongodb+srv://user2:user2@cluster0.zgtguxv.mongodb.net/?retryWrites=true&w=majority")
+    db = client[db_name]
+    collection = db[topic]
+# Send a ping to confirm a successful connection
+    try:
+        client.admin.command('ping')
+        print("Pinged your deployment. You successfully connected to MongoDB!")
+
+         # 插入数据
+        collection.insert_one(insert_data)
+    except Exception as e:
+        print(e) 
+    # 關閉與 MongoDB 的連接
+    client.close()
 
 def copy_to_db():
     # 連接到 MongoDB
