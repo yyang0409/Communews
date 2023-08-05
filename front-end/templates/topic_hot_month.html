@@ -232,7 +232,7 @@
               <div style="width: 100%;height: fit-content;">
               {% if user.is_authenticated %}
               <!-- 有登入的收藏 -->
-              <div class="like {% if like_status_dict[keyword] == 'Y' %}like-yes{% else %}like-no{% endif %}" data-id="{{keyword}}" data-path="/recommendation" style="display:inline-block;" ></div>
+              <div class="like {% if like_status_dict[keyword] == 'Y' %}like-yes{% else %}like-no{% endif %}" data-id="{{keyword}}" data-path="/topic/{{topicname}}/熱門/當月" style="display:inline-block;" ></div>
               {%else%}
               <!-- 未登入的收藏 -->
               <div class="before-like like-no" data-id="{{keyword}}" style="display:inline-block;" data-bs-toggle="modal" data-bs-target="#exampleModal"></div> 
@@ -267,7 +267,7 @@
               <!-- end of 未登入的收藏 -->
               {%endif%}
                 <div style="display:inline-block;">
-                  <a class="nav-link" href="{{ url_for('hashtag', keyword=keyword) }}">
+                  <a class="nav-link" href="{{ url_for('hashtag', keyword=keyword,type='當月熱門',topicname=topicname) }}">
                     <span class="topic fs-3 ms-3"># {{ keyword }}</span>
                   </a> 
                 </div>   
@@ -305,7 +305,7 @@
                     </div>
                     {% if user.is_authenticated %}
                     <!-- 登入後的評分 -->
-                    <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{stars_count_dict[news._id]}}" data-path="/recommendation">
+                    <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{stars_count_dict[news._id]}}" data-path="/topic/{{topicname}}/熱門/當月">
                       <p class="star" name="{{news._id}}">&#9734;</p>
                       <p class="star" name="{{news._id}}">&#9734;</p>
                       <p class="star" name="{{news._id}}">&#9734;</p>
