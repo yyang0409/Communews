@@ -1,4 +1,6 @@
 #資料庫
+from collections import Counter
+from datetime import datetime, timedelta
 from pymongo import MongoClient
 
 total_topic=["運動","生活","國際","娛樂","社會地方","科技","健康","財經"]
@@ -44,6 +46,23 @@ def check_duplicate(topic,subtopic,title_list,URL_list,image_list): # 過濾掉�
 def save_to_db(db_name,topic,insert_data):
     # 連接到 MongoDB
     client = MongoClient("mongodb+srv://user1:user1@cluster0.ronm576.mongodb.net/?retryWrites=true&w=majority")
+    db = client[db_name]
+    collection = db[topic]
+# Send a ping to confirm a successful connection
+    try:
+        client.admin.command('ping')
+        print("Pinged your deployment. You successfully connected to MongoDB!")
+
+         # 插入数据
+        collection.insert_one(insert_data)
+    except Exception as e:
+        print(e) 
+    # 關閉與 MongoDB 的連接
+    client.close()
+    
+def save_to_kmeans_db(db_name,topic,insert_data):
+    # 連接到 MongoDB
+    client = MongoClient("mongodb+srv://user2:user2@cluster0.zgtguxv.mongodb.net/?retryWrites=true&w=majority")
     db = client[db_name]
     collection = db[topic]
 # Send a ping to confirm a successful connection
@@ -138,5 +157,73 @@ def get_tol_col_data(start_date,end_date):
         for document in collection.find(query):
             kw_list.append(document['new_keyword'])
     return kw_list
+
+def get_DB_News_data(topic):
+    # 連接到 MongoDB
+    client = MongoClient("mongodb+srv://user1:user1@cluster0.ronm576.mongodb.net/?retryWrites=true&w=majority")
+    db = client['News']
+
+    current_datetime = datetime.now()
+    end_datetime = current_datetime.replace(hour=0, minute=0, second=0, microsecond=0)
+    start_datetime = end_datetime - timedelta(days=1)
+
+    collection = db[topic]
+    pipeline = [
+        {'$match': {'timestamp': {"$gte": start_datetime, "$lte": end_datetime}}},
+        {"$sort": {"timestamp": -1}}
+        #,{"$limit": 10}
+    ]
+
+    data = collection.aggregate(pipeline)
+    #print("這個是data:",list(data))
+    return list(data)
+
+#print(get_DB_News_data("運動"))
+
+def calculate_keywords(keywords_list):
+
+    keyword_counts = Counter()
+    all_keywords = []
+    for kw in keywords_list:
+        keywords = kw.split(" ")
+        keyword_counts.update(keywords)
+
+    top_keywords = keyword_counts.most_common(10)
+    for keyword, count in top_keywords:
+        all_keywords.append(keyword)
+    return all_keywords
+#取得某主題的關鍵每一天
+def get_subject_col_data(collection_name,option):
+    client = MongoClient("mongodb+srv://user1:user1@cluster0.ronm576.mongodb.net/TodayNews?retryWrites=true&w=majority")
+    db_daily = client['關鍵每一天']
+    db=client['News']
+    current_datetime = datetime.now()
+    
+    if option == 'daily':
+        end_datetime = current_datetime - timedelta(days=0)
+        start_datetime = end_datetime - timedelta(days=1)
+    elif option == 'weekly':
+        end_datetime = current_datetime - timedelta(days=0)
+        start_datetime = end_datetime - timedelta(days=7)
+    elif option == 'monthly':
+        end_datetime = current_datetime - timedelta(days=0)
+        start_datetime = end_datetime - timedelta(days=30)
+    else:
+      return
+    collection = db_daily[collection_name]
+    end_datetime=end_datetime.strftime("%Y-%m-%d")
+    start_datetime=start_datetime.strftime("%Y-%m-%d")
+    print("關鍵字找:大於等於",start_datetime,"小於",end_datetime)
+    documents = collection.find({"date": {"$gte": start_datetime, "$lt": end_datetime}})
+    
+    keywords_list = []
+    for document in documents:
+        keywords = document.get('keywords')
+        if keywords:
+            keywords_list.extend(keywords)
+
+    hot_keywords_list=calculate_keywords(keywords_list)
+
+    return hot_keywords_list
 
 

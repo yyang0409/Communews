@@ -92,17 +92,19 @@ function RemoveKeyword(){
     const likes = document.querySelectorAll(".like");
     const keywords = document.querySelectorAll(".list-group-item")    
 
-    for(let like=0; like<likes.length; like++){
-        likes[like].addEventListener("click", (event) => {
+    for (let like = 0; like < likes.length; like++) {
+      likes[like].addEventListener("click", (event) => {
         event.target.classList.toggle("like-no");
         event.target.classList.toggle("like-yes");
         if (event.target.classList.contains("like-no")) {
-            keywords[like].remove();
-        }         
+          // Find the closest parent element with the class 'list-group-item'
+          const parentKeyword = event.target.closest(".list-group-item");
+          parentKeyword.remove();
+        }
         var likeStatus = event.target.classList.contains("like-yes") ? "Y" : "N";
         console.log("Like status:", likeStatus);
-        // 獲取data-id的值
-        var dataIdValue = like.dataset.id;
+        // Find the 'like' element within the parent 'list-group-item'
+        var dataIdValue = event.target.closest(".list-group-item").querySelector(".like").dataset.id;
         console.log(dataIdValue);
         // 從 'data-path' 屬性中獲取 'path' 的值
         var path = event.target.dataset.path;

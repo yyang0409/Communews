@@ -26,7 +26,7 @@ def grab_yahoo_url(spider_url):
     i = 0
     count = 0
     print('載入資料開始...')
-    while count<30:
+    while count<10:
         i = i+1
         elements = driver.find_elements(By.CSS_SELECTOR,  'h3')
         s_num = len(elements)
