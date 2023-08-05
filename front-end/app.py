@@ -734,10 +734,14 @@ def hashtag(type,keyword,topicname):
                             stars_count_dict[news_id] = 0
                 return render_template('hashtag.html',type=type,topicname=topicname,keyword=keyword,news_list=news_list,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
         else:
-            db=myclient['Kmeans新聞']
-            collection=db[type]
-            result = collection.find_one({'topic':topicname,'keyword':keyword,'date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
-            return render_template('hashtag.html',type=type,topicname=topicname,keyword=result['keyword'],news_list=result['news_list'],like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+            if type!='搜尋':
+                db=myclient['Kmeans新聞']
+                collection=db[type]
+                result = collection.find_one({'topic':topicname,'keyword':keyword,'date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+                return render_template('hashtag.html',type=type,topicname=topicname,keyword=result['keyword'],news_list=result['news_list'],like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
+            else:
+                data,all_data =gen_kw_search_news(keyword)
+                return render_template('hashtag.html',type=type,topicname=topicname,keyword=keyword,news_list=all_data.get(keyword),user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
             data = request.json
