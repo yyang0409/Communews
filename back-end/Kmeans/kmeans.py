@@ -1,15 +1,23 @@
+from datetime import datetime, timedelta
+import pandas as pd
 # -*- coding: utf-8 -*-
 import jieba
 import requests
 from bs4 import BeautifulSoup
-from sklearn.exceptions import ConvergenceWarning
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.cluster import KMeans
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 import random
 import pandas as pd
 import os
 import json
+from DB.mongodb import *
+
+
+
+
 pd.set_option('display.max_columns', None)  # 設定顯示的最大列數，設為 None 表示顯示所有列
 pd.set_option('display.expand_frame_repr', False)  # 設定是否展開 DataFrame 的每一列，False 表示不展開
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -245,48 +253,69 @@ def newest_run_kmeans_from_df(df,cluster_num):
     return result_list
 
 def hot_run_kmeans_from_df(df,cluster_num):
+    #print(df)
+    #print(df.info())
+
+    # 提取'id'字段的值并存储在列表中
+    news_summary_list = df['summary'].tolist()
+    news_id_list = df['_id'].tolist()
+    
+    
+    with open(data_path+'kmeans.txt', "w",encoding='utf-8') as file:
+        # 遍历列表，逐行写入文件
+        for item in news_summary_list:
+            file.write(item+"\n")
+    CLSTER_NUM = cluster_num
+
+    Kmeans = KmeansClustering(stopwords_path=stopwords_path)
+    result = Kmeans.kmeans(data_path+'kmeans.txt', n_clusters=cluster_num)
+    #print(result)
+    df_news_summary = translate_text_to_dataframe('kmeans.txt')
+    df_news_summary['timestamp'] = df['timestamp'].apply(lambda x: x)
+    # 添加相似度欄位
+    df_news_summary['similarity'] = df['similarity']
+    #print(df_news_summary)
+    output_news_list = hot_choose_final_news(result,df_news_summary,cluster_num)
+    #print("傳回:",output_news_list)
+    finished_kmeans_summary_list = []
+
+    for news_index in (output_news_list):
+        finished_kmeans_summary_list.append(news_summary_list[news_index])
+    #print("finished_kmeans_summary_list:",finished_kmeans_summary_list)
+
+    df_return = pd.DataFrame()
+    
+    for summary in finished_kmeans_summary_list:
+        selected_rows = df[df["summary"] == summary]
+        #print(len(selected_rows))
+        if len(selected_rows)==1:
+            df_return = df_return.append(selected_rows, ignore_index=True) 
+        if len(selected_rows)>1:
+            #print("有兩個以上一樣的")
+            selected_rows = selected_rows.iloc[0]
+            df_return = df_return.append(selected_rows, ignore_index=True)
+    #print(df_return)
+    #list_data = df_return.values.tolist()
+    result_list = df_return.to_dict(orient='records')
+    #print(result_list)
+    return result_list
+
+def convert_to_dataframe(keyword_news_data):
+    data = []
+    for news in keyword_news_data:
+        data.append(news['document'])
+    return pd.DataFrame(data)
+
+def calculate_tfidf(news_text, keywords):
     try:
-        news_summary_list = df['summary'].tolist()
-        news_id_list = df['_id'].tolist()
+        vectorizer = TfidfVectorizer()
+        tfidf_matrix = vectorizer.fit_transform(news_text)
+        query_vector = vectorizer.transform([keywords])  # 把關鍵字轉換成TF-IDF向量
+    except ValueError:
+        print("ValueError: The documents only contain stop words or have no content.")
+        return None
 
-        with open(data_path + 'kmeans.txt', "w", encoding='utf-8') as file:
-            for item in news_summary_list:
-                file.write(item + "\n")
+    # 計算相似性
+    similarity_scores = cosine_similarity(tfidf_matrix, query_vector)
+    return similarity_scores.flatten()
 
-        CLUSTER_NUM = cluster_num
-
-        Kmeans = KmeansClustering(stopwords_path=stopwords_path)
-        
-        try:
-            result = Kmeans.kmeans(data_path + 'kmeans.txt', n_clusters=cluster_num)
-        except ConvergenceWarning:
-            print("ConvergenceWarning: The number of distinct clusters found smaller than n_clusters. Reducing cluster_num by 1.")
-            cluster_num -= 1
-            result = Kmeans.kmeans(data_path + 'kmeans.txt', n_clusters=cluster_num)
-
-        df_news_summary = translate_text_to_dataframe('kmeans.txt')
-        df_news_summary['timestamp'] = df['timestamp'].apply(lambda x: x)
-        df_news_summary['similarity'] = df['similarity']
-
-        output_news_list = hot_choose_final_news(result, df_news_summary, cluster_num)
-
-        finished_kmeans_summary_list = []
-        for news_index in output_news_list:
-            finished_kmeans_summary_list.append(news_summary_list[news_index])
-
-        df_return = pd.DataFrame()
-
-        for summary in finished_kmeans_summary_list:
-            selected_rows = df[df["summary"] == summary]
-            if len(selected_rows) == 1:
-                df_return = df_return.append(selected_rows, ignore_index=True)
-            if len(selected_rows) > 1:
-                selected_rows = selected_rows.iloc[0]
-                df_return = df_return.append(selected_rows, ignore_index=True)
-
-        result_list = df_return.to_dict(orient='records')
-        return result_list
-
-    except Exception as e:
-        print("An error occurred:", e)
-        return []

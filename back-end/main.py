@@ -1,7 +1,7 @@
 #情緒分析
 import datetime
 from cemotion import Cemotion
-from hanziconv import HanziConv #將彎彎字體改成簡體字
+from hanziconv import HanziConv
 c = Cemotion()
 #爬蟲
 from Spider.kw_spider import *
@@ -18,7 +18,9 @@ import numpy as np
 #資料庫
 from DB.mongodb import *
 from datetime import datetime,timedelta
-
+#Kmeans
+from Kmeans.kmeans import *
+from Kmeans.search_news import * 
 #停用詞
 stops = []
 with open('Summarize\stopWord_summar.txt', 'r', encoding='utf-8-sig') as f:
@@ -46,6 +48,25 @@ def kw_dataframe(all_keywords,date):
     
     insert_data = {
                 'keywords': all_keywords,
+                'date': date
+                }  
+    return insert_data
+
+def newest_kmeans_news_dataframe(topic,news_list,date):
+    insert_data = {
+                'topic': topic,
+                'news_list':news_list,
+                'date': date
+                }  
+    return insert_data
+
+def hot_kmeans_news_dataframe(topic,keyword,news_list,start_news_date,end_news_date,date):
+    insert_data = {
+                'topic': topic,
+                'keyword':keyword,
+                'news_list':news_list,
+                'start_news_date':start_news_date,
+                'end_news_date':end_news_date,
                 'date': date
                 }  
     return insert_data
@@ -103,6 +124,36 @@ def hot_kw(topic):
     #print(all_keywords,current_date)
     save_to_db("關鍵每一天",topic,kw_dataframe(all_keywords,current_date))  #放進資料庫
     
+def do_newest_kmeans(topic):
+    current_date =(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")
+    if topic == '綜合全部':
+        after_total_newest_news_list=newest_news_serch(total_newest_news_list)
+        save_to_kmeans_db('Kmeans新聞','最新',newest_kmeans_news_dataframe(topic,after_total_newest_news_list,current_date))
+    else:
+        topic_newest_news_list=get_DB_News_data(topic)
+        total_newest_news_list.extend(topic_newest_news_list)
+        after_topic_newest_news_list=newest_news_serch(topic_newest_news_list)
+        save_to_kmeans_db('Kmeans新聞','最新',newest_kmeans_news_dataframe(topic,after_topic_newest_news_list,current_date))
+def do_hot_kmeans(topic,option):
+    current_date =(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")
+    if topic == '綜合全部':
+        total_hot_news_dic,start_news_date,end_news_date=hot_all_search_news(option)
+        for keyword,total_hot_news_list in total_hot_news_dic.items():
+            if option =='daily':
+                save_to_kmeans_db('Kmeans新聞','當日熱門',hot_kmeans_news_dataframe(topic,keyword,total_hot_news_list,start_news_date,end_news_date,current_date))
+            elif option =='weekly':
+                save_to_kmeans_db('Kmeans新聞','當週熱門',hot_kmeans_news_dataframe(topic,keyword,total_hot_news_list,start_news_date,end_news_date,current_date))
+            else:
+                save_to_kmeans_db('Kmeans新聞','當月熱門',hot_kmeans_news_dataframe(topic,keyword,total_hot_news_list,start_news_date,end_news_date,current_date))
+    else:
+        topic_hot_news_dic,start_news_date,end_news_date=hot_topic_search_news(topic,option)
+        for keyword,topic_hot_news_list in topic_hot_news_dic.items():
+            if option =='daily':
+                save_to_kmeans_db('Kmeans新聞','當日熱門',hot_kmeans_news_dataframe(topic,keyword,topic_hot_news_list,start_news_date,end_news_date,current_date))
+            elif option =='weekly':
+                save_to_kmeans_db('Kmeans新聞','當週熱門',hot_kmeans_news_dataframe(topic,keyword,topic_hot_news_list,start_news_date,end_news_date,current_date))
+            else:
+                save_to_kmeans_db('Kmeans新聞','當月熱門',hot_kmeans_news_dataframe(topic,keyword,topic_hot_news_list,start_news_date,end_news_date,current_date))
 
 if __name__ == '__main__':
 
@@ -204,5 +255,20 @@ if __name__ == '__main__':
     topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經","綜合全部"] # 
     for topic in topics:
         hot_kw(topic)
+
+
+    #做Kmeans
+    topics=["運動","生活","國際","娛樂","社會地方","健康","綜合全部"] #"科技","健康","財經",
+    #熱門系列
+    for topic in topics:
+        for option in ['daily','weekly','monthly']:
+            do_hot_kmeans(topic,option)
+
+    #最新系列
+    total_newest_news_list = []
+    for topic in topics:
+        do_newest_kmeans(topic)
+
+    
 
 
