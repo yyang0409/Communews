@@ -683,8 +683,7 @@ def show():
                     extend_data,all_extend_data_news=gen_kw_search_news(extend_keyword)
                     combined_data.update(extend_data)
                     
-            like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in combined_data.keys()}
-            return render_template('show.html',combined_data=combined_data,user=g.user,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict)
+            return render_template('show.html',combined_data=combined_data, user=g.user,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict)
     return redirect(url_for('index'))   
 
 @app.route("/hashtag/<type>/<topicname>/<keyword>", methods=['GET','POST'])
