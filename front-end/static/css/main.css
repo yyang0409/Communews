@@ -516,3 +516,17 @@ header{
     background-color:#526d82d8;
     color: #fff;
 }
+
+.col-2{
+    position:fixed;
+    right: 0;
+}
+
+
+.list-group{
+    border-radius:0 0 15px 15px;
+}
+
+.top10{
+    border-radius: 15px 15px 0 0;
+}
