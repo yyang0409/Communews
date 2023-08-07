@@ -189,6 +189,18 @@
     <!-- end of tabs -->
   </header>
 
+  <div class="row">
+    <div class="col-2">
+      <div id="list-example" class="list-group">
+        <br>
+        <a class="list-group-item top10">當週熱門關鍵字TOP10</a>
+        {% for keyword, news_list in combined_data.items() %}
+        <a class="list-group-item list-group-item-action" href="#{{keyword}}">{{keyword}}</a>
+        {% endfor %}
+      
+      </div>
+      <!-- End of list-group -->
+    </div>
     <!-- 關鍵字新聞結果 -->  
     <!-- start of container -->
           
