@@ -21,7 +21,7 @@ def connect_db():
             "host": "127.0.0.1",
             "port": 3306,
             "user": "root",
-            "password": "Jeter#622019",
+            "password": "109403502",
             "db": "communews",
             "charset": "utf8mb4",
             "cursorclass": pymysql.cursors.DictCursor
@@ -350,12 +350,12 @@ def everyweek():
                     else:
                         stars_count_dict[news['_id']] = 0
                 data[result['keyword']] = result['news_list'][:4]
-            return render_template('hot.html', data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
+            return render_template('hot_everyweek.html', data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
         else:
             results = collection.find({'topic':'綜合全部','date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
             for result in results :
                 data[result['keyword']] = result['news_list'][:4]
-            return render_template('hot.html', data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
+            return render_template('hot_everyweek.html', data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
             data = request.json
@@ -393,12 +393,12 @@ def everymonth():
                     else:
                         stars_count_dict[news['_id']] = 0
                 data[result['keyword']] = result['news_list'][:4]
-            return render_template('hot.html', data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
+            return render_template('hot_everymonth.html', data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
         else:
             results = collection.find({'topic':'綜合全部','date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
             for result in results :
                 data[result['keyword']] = result['news_list'][:4]
-            return render_template('hot.html', data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
+            return render_template('hot_everymonth.html', data=data, like_status_dict=like_status_dict, stars_count_dict=stars_count_dict, user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
             data = request.json
