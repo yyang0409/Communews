@@ -134,6 +134,7 @@ def do_newest_kmeans(topic):
         total_newest_news_list.extend(topic_newest_news_list)
         after_topic_newest_news_list=newest_news_serch(topic_newest_news_list)
         save_to_kmeans_db('Kmeans新聞','最新',newest_kmeans_news_dataframe(topic,after_topic_newest_news_list,current_date))
+
 def do_hot_kmeans(topic,option):
     current_date =(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")
     if topic == '綜合全部':
@@ -145,6 +146,7 @@ def do_hot_kmeans(topic,option):
                 save_to_kmeans_db('Kmeans新聞','當週熱門',hot_kmeans_news_dataframe(topic,keyword,total_hot_news_list,start_news_date,end_news_date,current_date))
             else:
                 save_to_kmeans_db('Kmeans新聞','當月熱門',hot_kmeans_news_dataframe(topic,keyword,total_hot_news_list,start_news_date,end_news_date,current_date))
+
     else:
         topic_hot_news_dic,start_news_date,end_news_date=hot_topic_search_news(topic,option)
         for keyword,topic_hot_news_list in topic_hot_news_dic.items():
@@ -155,6 +157,7 @@ def do_hot_kmeans(topic,option):
             else:
                 save_to_kmeans_db('Kmeans新聞','當月熱門',hot_kmeans_news_dataframe(topic,keyword,topic_hot_news_list,start_news_date,end_news_date,current_date))
 
+        
 if __name__ == '__main__':
 
     #清空前天爬蟲
@@ -258,15 +261,17 @@ if __name__ == '__main__':
 
 
     #做Kmeans
-    topics=["運動","生活","國際","娛樂","社會地方","健康","綜合全部"] #"科技","健康","財經",
+    topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經","綜合全部"] # 
     #熱門系列
     for topic in topics:
         for option in ['daily','weekly','monthly']:
+            print("熱門:",topic,option)
             do_hot_kmeans(topic,option)
-
+    
     #最新系列
     total_newest_news_list = []
     for topic in topics:
+        print("最新:",topic)
         do_newest_kmeans(topic)
 
     
