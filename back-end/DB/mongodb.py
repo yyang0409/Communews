@@ -59,7 +59,7 @@ def save_to_db(db_name,topic,insert_data):
         print(e) 
     # 關閉與 MongoDB 的連接
     client.close()
-    
+
 def save_to_kmeans_db(db_name,topic,insert_data):
     # 連接到 MongoDB
     client = MongoClient("mongodb+srv://user2:user2@cluster0.zgtguxv.mongodb.net/?retryWrites=true&w=majority")
