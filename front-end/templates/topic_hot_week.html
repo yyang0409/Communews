@@ -194,39 +194,52 @@
     <!-- end of tabs -->
     </header>
 
-
-    <!-- start of container -->
-    <!-- 最新新聞 -->
-    
-    <div class="container news-container">                 
-      
-        <div style="width: 100%;height: fit-content;">
-          <p class="topic fs-2 mt-2" style="display:inline-block;"># <span class="topicname">{{topicname}}</span>新聞</p>
-        </div>
-        <ul class="nav nav-pills mx-1 d-flex justify-content-evenly text-center">
-          <li class="nav-item me-1 newest-tab">
-            <a class="nav-link" href="/topic/{{topicname}}">最新</a>
-          </li>
-          <li class="nav-item hot-tab">
-            <a class="nav-link active" aria-current="page" href="/topic/{{topicname}}/熱門">熱門</a>
-          </li>
-        </ul>
-
-        <!-- 下拉式選單 -->
-        <div class="dropdown py-2">
-          <select  id="dropdown" class="select-hottime info-select" onchange="hot_selection();">
-              <option value="/topic/{{topicname}}/熱門" >當日熱門</option>
-              <option value="/topic/{{topicname}}/熱門/當週" selected="selected">當週熱門</option>
-              <option value="/topic/{{topicname}}/熱門/當月">當月熱門</option>
-          </select>
-          <div id="show"></div>
-        </div>
-      </div>   
-      
-      <!-- Start of 當週熱門新聞 -->
-      {% for keyword, news_list in data.items() %}
+    <div class="row">
+      <div class="col-2">
+        <div id="list-example" class="list-group">
+          <br>
+          <a class="list-group-item top10">熱門關鍵字TOP10</a>
+          <!-- 共要有10個關鍵字 -->
+          <a class="list-group-item list-group-item-action" href="#{{keyword}}">{{keyword}}</a>
+          <a class="list-group-item list-group-item-action" href="#list-item-2">Item 2</a>
+          <a class="list-group-item list-group-item-action" href="#list-item-3">Item 3</a>
         
-        <div class="container news-container">
+        </div>
+        <!-- End of list-group -->
+      </div>
+      <!-- end of col-2 -->
+
+      <div class="col-10">
+        <!-- start of container -->   
+        <div class="container news-container">                 
+          
+          <div style="width: 100%;height: fit-content;">
+            <p class="topic fs-2 mt-2" style="display:inline-block;"># <span class="topicname">{{topicname}}</span>新聞</p>
+          </div>
+          <ul class="nav nav-pills mx-1 d-flex justify-content-evenly text-center">
+            <li class="nav-item me-1 newest-tab">
+              <a class="nav-link" href="/topic/{{topicname}}">最新</a>
+            </li>
+            <li class="nav-item hot-tab">
+              <a class="nav-link active" aria-current="page" href="/topic/{{topicname}}/熱門">熱門</a>
+            </li>
+          </ul>
+
+          <!-- 下拉式選單 -->
+          <div class="dropdown py-2">
+            <select  id="dropdown" class="select-hottime info-select" onchange="hot_selection();">
+                <option value="/topic/{{topicname}}/熱門" >當日熱門</option>
+                <option value="/topic/{{topicname}}/熱門/當週" selected="selected">當週熱門</option>
+                <option value="/topic/{{topicname}}/熱門/當月">當月熱門</option>
+            </select>
+            <div id="show"></div>
+          </div>
+        </div>   
+        
+        <!-- Start of 當週熱門新聞 -->
+        {% for keyword, news_list in data.items() %}
+          
+        <div class="container news-container" id="{{keyword}}">
         
           <div class="row">
             <!-- Keyword -->
@@ -378,7 +391,10 @@
         </div>
         <!-- end of container -->  
         {% endfor %}
-        
+      </div>  
+      <!-- end of col-10 -->
+    </div>
+    <!-- end of row -->
     
   <!-- Bootstrap js -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
