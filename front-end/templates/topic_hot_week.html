@@ -198,11 +198,10 @@
       <div class="col-2">
         <div id="list-example" class="list-group">
           <br>
-          <a class="list-group-item top10">熱門關鍵字TOP10</a>
-          <!-- 共要有10個關鍵字 -->
+          <a class="list-group-item top10">當週熱門關鍵字TOP10</a>
+          {% for keyword, news_list in data.items() %}
           <a class="list-group-item list-group-item-action" href="#{{keyword}}">{{keyword}}</a>
-          <a class="list-group-item list-group-item-action" href="#list-item-2">Item 2</a>
-          <a class="list-group-item list-group-item-action" href="#list-item-3">Item 3</a>
+          {% endfor %}
         
         </div>
         <!-- End of list-group -->

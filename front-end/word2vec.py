@@ -4,7 +4,7 @@ def train(corpus):
     tokens = [sentence.split() for sentence in corpus]
 
     # 訓練Word2Vec模型
-    model = Word2Vec(tokens,vector_size=100,window=10,min_count=10,sg=0,hs=1,negative=5,workers=1,epochs=10,sample=0.001)
+    model = Word2Vec(tokens,vector_size=100,window=10,min_count=10,sg=0,hs=1,negative=5,workers=1,epochs=7,sample=0.001)
 
     # 儲存模型
     model.save('project_model_v2.model')  
@@ -12,7 +12,7 @@ def train(corpus):
 
 def word2vec(kw):
   try:
-    loaded_model = Word2Vec.load('project_model_v1.model')
+    loaded_model = Word2Vec.load('project_model_0805.model')
     similar_words = loaded_model.wv.most_similar(kw, topn=3)
     filtered_words = [word for word, score in similar_words if score > 0.5]
   except KeyError:

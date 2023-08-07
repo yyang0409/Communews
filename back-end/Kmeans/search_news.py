@@ -174,8 +174,10 @@ def hot_topic_search_news(collection_name, option):
             news['document']['similarity'] = similarity_scores[i]
 
         df_keyword_news_data = convert_to_dataframe(keyword_news_data)
-
-        result = hot_run_kmeans_from_df(df_keyword_news_data, int(len(df_keyword_news_data) / 2))
+        if int(len(df_keyword_news_data) / 2) == 0 :
+            result = hot_run_kmeans_from_df(df_keyword_news_data, 1)
+        else:
+            result = hot_run_kmeans_from_df(df_keyword_news_data, int(len(df_keyword_news_data) / 2))
 
         # 按照相似度和时间戳排序
         result.sort(key=lambda x: (x['similarity'], x['timestamp']), reverse=True)
