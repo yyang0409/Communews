@@ -193,7 +193,7 @@
     <div class="col-2">
       <div id="list-example" class="list-group">
         <br>
-        <a class="list-group-item top10">當週熱門關鍵字TOP10</a>
+        <a class="list-group-item top10">熱門關鍵字</a>
         {% for keyword, news_list in combined_data.items() %}
         <a class="list-group-item list-group-item-action" href="#{{keyword}}">{{keyword}}</a>
         {% endfor %}
@@ -203,9 +203,9 @@
     </div>
     <!-- 關鍵字新聞結果 -->  
     <!-- start of container -->
-          
+    <div class="col-10">      
       {% for keyword, news_list in combined_data.items() %}
-      <div class="container news-container">
+      <div class="container news-container" id="{{keyword}}">
       
         <div class="row">
           <!-- Keyword -->
@@ -351,7 +351,9 @@
         
       </div>
       {% endfor %}
-    <!-- end of container -->
+      <!-- end of container -->
+    </div>
+  </div>
 
     
     

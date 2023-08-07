@@ -158,60 +158,66 @@
       <!-- 後端要回傳關鍵字到id -->
       <!-- 後端要回傳該關鍵字的新聞 -->
       {% for keyword, news_list in all_data.items() %}
-      <div class="container" id="{{keyword}}">       
+      <div class="container" id="{{keyword}}">
+        <div id="newest" class="collection-container menu collection-padding collection-card">
+          <div id="newest-card">
             <!--card column-->
             {% for news in news_list %}
-        <div class="col-6 mb-2 d-flex align-items-center justify-content-center">
-          <!-- Card section -->
-          <div class="card h-100 pb-2" style="width: 675px;">
-            <div class="row g-0">
-              <div class="h-75 col col-md-4 pb-1 d-flex align-items-center justify-content-center rounded-start">
-                <a href="{{ news.url }}">
-                  {% if news.image !="None" %}
-                    <img src="{{ news.image }}" class="img-fluid rounded">
-                  {% else %}
-                    <img src="{{url_for('static',filename='img/44300_nobg.png')}}" class="img-fluid rounded" style="object-fit: cover;">
-                  {% endif %}
-                </a>         
-              </div>
-              <!-- card 內容 -->
-              <div class="col-md-8 col-sm-12 h-75 rounded-bottom" style="background-color: #C2C8C6;">
-                <div class="card-body">
-                  <a class="card-title" href="{{news.url}}" >{{news.title}}</a>
-                  <p class="card-text mt-2">
-                    {% if news.summary|length > 100 %}
-                      {{ news.summary[:100] }}...<a href="{{news.url}}">查看完整內容</a>
+          <div class="col-6 mb-2 d-flex align-items-center justify-content-center">
+            <!-- Card section -->
+            <div class="card h-100 pb-2" style="width: 675px;">
+              <div class="row g-0">
+                <div class="h-75 col col-md-4 pb-1 d-flex align-items-center justify-content-center rounded-start">
+                  <a href="{{ news.url }}">
+                    {% if news.image !="None" %}
+                      <img src="{{ news.image }}" class="img-fluid rounded">
                     {% else %}
-                      {{ news.summary }}
+                      <img src="{{url_for('static',filename='img/44300_nobg.png')}}" class="img-fluid rounded" style="object-fit: cover;">
                     {% endif %}
-                  </p>
-                  <a href="{{ptt_url}}" class="card-link" target="_blank">{{ptt_title}}</a>
+                  </a>         
                 </div>
-              </div>
-
-              <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ stars_count_dict[news._id] }}" data-path="/collection/{{keyword}}">
-                <p class="star" name="{{news._id}}">&#9734;</p>
-                <p class="star" name="{{news._id}}">&#9734;</p>
-                <p class="star" name="{{news._id}}">&#9734;</p>
-                <p class="star" name="{{news._id}}">&#9734;</p>
-                <p class="star" name="{{news._id}}">&#9734;</p>
-                <span class="stars-score" id="{{news._id}}"></span>
-              </form> 
-
-
-                <div class="col-6 ptt-link">
-                  <a href="{{ptt_url}}">PTT-post</a>
-                  <a href="{{ptt_url}}">PTT-post</a>
-                  <a href="{{ptt_url}}">PTT-post</a>
+                <!-- card 內容 -->
+                <div class="col-md-8 col-sm-12 h-75 rounded-bottom" style="background-color: #C2C8C6;">
+                  <div class="card-body">
+                    <a class="card-title" href="{{news.url}}" >{{news.title}}</a>
+                    <p class="card-text mt-2">
+                      {% if news.summary|length > 100 %}
+                        {{ news.summary[:100] }}...<a href="{{news.url}}">查看完整內容</a>
+                      {% else %}
+                        {{ news.summary }}
+                      {% endif %}
+                    </p>
+                    <a href="{{ptt_url}}" class="card-link" target="_blank">{{ptt_title}}</a>
+                  </div>
                 </div>
 
+                <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ stars_count_dict[news._id] }}" data-path="/collection/{{keyword}}">
+                  <p class="star" name="{{news._id}}">&#9734;</p>
+                  <p class="star" name="{{news._id}}">&#9734;</p>
+                  <p class="star" name="{{news._id}}">&#9734;</p>
+                  <p class="star" name="{{news._id}}">&#9734;</p>
+                  <p class="star" name="{{news._id}}">&#9734;</p>
+                  <span class="stars-score" id="{{news._id}}"></span>
+                </form> 
+
+
+                  <div class="col-6 ptt-link">
+                    <a href="{{ptt_url}}">PTT-post</a>
+                    <a href="{{ptt_url}}">PTT-post</a>
+                    <a href="{{ptt_url}}">PTT-post</a>
+                  </div>
+
+                </div>
+                <!--end of card row-->
+              </div> 
+              <!-- end of card section -->
             </div>
-            <!--end of card row-->
-          </div> 
-          <!-- end of card section -->
-        </div>
-        <!-- end of column -->  
-        {% endfor %} 
+            <!-- end of column -->  
+            {% endfor %} 
+          </div>
+          <!-- end of newest card -->
+        </div>  
+        <!-- end of newest -->
       </div> 
       <!-- end of keyword container -->
       {% endfor %}
