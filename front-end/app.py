@@ -651,7 +651,19 @@ def show():
                 keyword = request.form.get("keyword", "")
                 data, all_data = gen_kw_search_news(keyword)
                 combined_data.update(data)
-                extend_keywords = word2vec(keyword)
+                # 初始化 extend_keywords 为空集合
+                extend_keywords = set()
+                for keyword, news_list in data.items():
+                    # 调用 word2vec() 函数获取与关键字相似的单词列表
+                    similar_words = word2vec(keyword)
+                    if isinstance(similar_words, list) and similar_words != "None":
+                        for word in similar_words:
+                            if word not in extend_keywords:
+                                extend_keywords.add(word)
+
+                # 将 extend_keywords 集合转换为列表
+                extend_keywords = list(extend_keywords)
+                print("extend_keywords:",extend_keywords)
                 if extend_keywords != "None":
                     for extend_keyword in extend_keywords:
                         extend_data, all_extend_data_news = gen_kw_search_news(extend_keyword)
