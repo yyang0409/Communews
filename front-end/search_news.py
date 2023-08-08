@@ -264,24 +264,19 @@ def ws_zh(text):
     return words[0]
 
 def get_input_keyword(usr_input): 
-    vectorizer =CountVectorizer()
-
-    usr_input=' '.join(ws_zh(usr_input))
-
-    kw_model = KeyBERT(model='distiluse-base-multilingual-cased-v1')
-
-    keywords= kw_model.extract_keywords(usr_input,vectorizer=vectorizer, top_n=3)
-    keywords = [keyword[0] for keyword in keywords]
-    for keyword in keywords:
-        print(keyword)
-    
-    return keywords
+    if len(usr_input)>2:
+        usr_input = ws_zh(usr_input)
+        return usr_input
+    else:
+         return [usr_input]
 #使用者搜尋 比對 
 #會再改
 def gen_kw_search_news(usr_input):
     all_selected_news = {}  # 以關鍵字為鍵的存儲最相似的新聞字典
     four_selected_news={}
+
     all_keywords = get_input_keyword(usr_input)
+
 
     for keyword in all_keywords:
         # 進行聚合查詢，使用一個關鍵字來查詢新聞
