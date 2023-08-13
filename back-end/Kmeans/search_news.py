@@ -2,15 +2,17 @@ from datetime import datetime, timedelta
 import pandas as pd
 from pymongo import MongoClient
 from DB.mongodb import get_subject_col_data
-
-from Kmeans.kmeans import calculate_tfidf, convert_to_dataframe, hot_run_kmeans_from_df, newest_run_kmeans_from_df
+from Kmeans.kmeans import *
 
 total_subject = ['健康', '國際', '娛樂', '生活', '社會地方', '科技', '財經', '運動']
 client = MongoClient("mongodb+srv://user1:user1@cluster0.ronm576.mongodb.net/TodayNews?retryWrites=true&w=majority")
-db_daily = client['關鍵每一天']
+#db_daily = client['關鍵每一天']
 db=client['News']
+client_2 = MongoClient("mongodb+srv://userdb2:userdb2@cluster0.whf1ljw.mongodb.net/?retryWrites=true&w=majority")
+#db_daily_2 = client_2['關鍵每一天']
+db_2=client_2['News']
 
-def newest_news_serch(combined_data):
+def newest_news_search(combined_data):
     df = pd.DataFrame(combined_data)
     print(len(df))
     news_list= newest_run_kmeans_from_df(df,len(df)//5)
@@ -64,12 +66,14 @@ def hot_all_search_news(option):
         for collection_name in total_subject:
                 news_data = list(db[collection_name].aggregate(pipeline))
                 keyword_news_data.extend(news_data)  # 把查詢結果加入列表
+                news_data_2 = list(db_2[collection_name].aggregate(pipeline))
+                keyword_news_data.extend(news_data_2)  # 把查詢結果加入列表
                 
         # 提取新聞標題和摘要文本
         news_text = [news['combined_text'] for news in keyword_news_data]
 
         # 計算TF-IDF相似性分數
-        similarity_scores = calculate_tfidf(news_text, keyword)
+        similarity_scores = calculate_bert_similarity(news_text, keyword)
 
         
         # 把相似性分數加回每個新聞的資料中
@@ -126,7 +130,12 @@ def hot_topic_search_news(collection_name, option):
                 }
             }
         ]
-        news_data = list(db[collection_name].aggregate(pipeline))
+        news_data=[]
+        news_data_1 = list(db[collection_name].aggregate(pipeline))
+        news_data.extend(news_data_1)
+        news_data_2 = list(db_2[collection_name].aggregate(pipeline))
+        news_data.extend(news_data_2)
+
         print("原本:")
         print(len(news_data))
         if len(news_data) < 20:
@@ -154,7 +163,12 @@ def hot_topic_search_news(collection_name, option):
                 }
             }
     ]
-            news_data = list(db[collection_name].aggregate(pipeline))
+            news_data=[]
+            news_data_1 = list(db[collection_name].aggregate(pipeline))
+            news_data.extend(news_data_1)
+            news_data_2 = list(db_2[collection_name].aggregate(pipeline))
+            news_data.extend(news_data_2)
+            
             print("後來:")
             print(len(news_data))
         # 建立一个空的列表来保存查询结果
@@ -167,7 +181,7 @@ def hot_topic_search_news(collection_name, option):
         news_text = [news['combined_text'] for news in keyword_news_data]
 
         # 计算TF-IDF相似性分数
-        similarity_scores = calculate_tfidf(news_text, keyword)
+        similarity_scores = calculate_bert_similarity(news_text, keyword)
 
         # 把相似性分数加回每个新闻的数据中
         for i, news in enumerate(keyword_news_data):
@@ -185,3 +199,45 @@ def hot_topic_search_news(collection_name, option):
             selected_news[keyword] = [news for news in result]
 
     return selected_news,start_datetime,end_datetime
+
+def convert_to_dataframe(keyword_news_data):
+    data = []
+    for news in keyword_news_data:
+        data.append(news['document'])
+    return pd.DataFrame(data)
+
+def calculate_tfidf(news_text, keywords):
+    try:
+        vectorizer = TfidfVectorizer()
+        tfidf_matrix = vectorizer.fit_transform(news_text)
+        query_vector = vectorizer.transform([keywords])  # 把關鍵字轉換成TF-IDF向量
+    except ValueError:
+        print("ValueError: The documents only contain stop words or have no content.")
+        return None
+
+    # 計算相似性
+    similarity_scores = cosine_similarity(tfidf_matrix, query_vector)
+    return similarity_scores.flatten()
+
+    
+model_name = "bert-base-chinese"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModel.from_pretrained(model_name)
+def calculate_bert_similarity(news_text_list, keyword):
+        try:
+            model_name = "bert-base-chinese"
+            tokenizer = AutoTokenizer.from_pretrained(model_name)
+            model = AutoModel.from_pretrained(model_name)
+            inputs = tokenizer(news_text_list, [keyword] * len(news_text_list), return_tensors="pt", padding=True, truncation=True)
+
+            with torch.no_grad():
+                outputs = model(**inputs)
+                news_embeddings = outputs.last_hidden_state[:, 0, :]  
+                keyword_embedding = outputs.last_hidden_state[:, 1, :]  
+
+            cosine_similarity_scores = cosine_similarity(news_embeddings, keyword_embedding)
+        
+            return cosine_similarity_scores.flatten()
+        except ValueError:
+            print("ValueError: The documents only contain stop words or have no content.")
+            return None

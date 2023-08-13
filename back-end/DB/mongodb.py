@@ -9,9 +9,12 @@ def check_duplicate(topic,subtopic,title_list,URL_list,image_list): # 過濾掉�
     # 連接到 MongoDB
     client = MongoClient("mongodb+srv://user1:user1@cluster0.ronm576.mongodb.net/?retryWrites=true&w=majority")
     db = client["News"]
-    db2 =client["TodayNews"]
+    client_2 = MongoClient("mongodb+srv://userdb2:userdb2@cluster0.whf1ljw.mongodb.net/?retryWrites=true&w=majority")
+    db_2 = client_2["News"]
+    db_3 =client_2["TodayNews"]
     collection = db[topic]
-    collection2 = db2[topic]
+    collection_2 = db_2[topic]
+    collection_3 = db_3[topic]
 
     filtered_title = []
     filtered_url=[]
@@ -19,6 +22,9 @@ def check_duplicate(topic,subtopic,title_list,URL_list,image_list): # 過濾掉�
     final_filtered_title=[]
     final_filtered_url=[]
     final_filtered_image=[]
+    double_filtered_title = []
+    double_filtered_url=[]
+    double_filtered_image=[]
 # 遍歷手上的資料清單
     for title,url,image in zip(title_list,URL_list,image_list):
         # 在資料庫中查找與當前標題相符的資料
@@ -32,7 +38,17 @@ def check_duplicate(topic,subtopic,title_list,URL_list,image_list): # 過濾掉�
 
     for title,url,image in zip(filtered_title,filtered_url,filtered_image):
         # 在資料庫中查找與當前標題相符的資料
-        result = collection2.find_one({'subtopic':subtopic,'title': title})
+        result = collection_2.find_one({'subtopic':subtopic,'title': title})
+        
+        # 如果找不到相符的資料，則將當前標題添加到篩選後的資料清單
+        if result is None:
+            double_filtered_title.append(title)
+            double_filtered_url.append(url)
+            double_filtered_image.append(image)
+
+    for title,url,image in zip(double_filtered_title,double_filtered_url,double_filtered_image):
+        # 在資料庫中查找與當前標題相符的資料
+        result = collection_3.find_one({'subtopic':subtopic,'title': title})
         
         # 如果找不到相符的資料，則將當前標題添加到篩選後的資料清單
         if result is None:
@@ -45,7 +61,7 @@ def check_duplicate(topic,subtopic,title_list,URL_list,image_list): # 過濾掉�
 
 def save_to_db(db_name,topic,insert_data):
     # 連接到 MongoDB
-    client = MongoClient("mongodb+srv://user1:user1@cluster0.ronm576.mongodb.net/?retryWrites=true&w=majority")
+    client = MongoClient("mongodb+srv://userdb2:userdb2@cluster0.whf1ljw.mongodb.net/?retryWrites=true&w=majority")
     db = client[db_name]
     collection = db[topic]
 # Send a ping to confirm a successful connection
@@ -79,7 +95,7 @@ def save_to_kmeans_db(db_name,topic,insert_data):
 
 def copy_to_db():
     # 連接到 MongoDB
-    client = MongoClient("mongodb+srv://user1:user1@cluster0.ronm576.mongodb.net/?retryWrites=true&w=majority")
+    client = MongoClient("mongodb+srv://userdb2:userdb2@cluster0.whf1ljw.mongodb.net/?retryWrites=true&w=majority")
     source_db = client["TodayNews"]
     target_db = client["News"]
 
@@ -103,7 +119,7 @@ def copy_to_db():
     print("DB複製完成!")
 
 def clean_todaydb():
-    client = MongoClient("mongodb+srv://user1:user1@cluster0.ronm576.mongodb.net/?retryWrites=true&w=majority")
+    client = MongoClient("mongodb+srv://userdb2:userdb2@cluster0.whf1ljw.mongodb.net/?retryWrites=true&w=majority")
     db = client["TodayNews"]
     # 获取集合名称列表
     collection_names = db.list_collection_names()
@@ -125,6 +141,15 @@ def get_all_data(clientnm,item):
         collection = db[collection_name]
         for document in collection.find():
             item_list.append(document[item])
+    client_2 = MongoClient("mongodb+srv://userdb2:userdb2@cluster0.whf1ljw.mongodb.net/?retryWrites=true&w=majority")
+    db_2 = client_2[clientnm]
+    # 获取集合名称列表
+    collection_names = db_2.list_collection_names()
+    for collection_name in collection_names:
+        # 获取源集合中的所有文档
+        collection_2 = db_2[collection_name]
+        for document in collection_2.find():
+            item_list.append(document[item])
     # 關閉與 MongoDB 的連接
     client.close()
     return item_list
@@ -139,6 +164,14 @@ def get_col_data(collection_name,start_date,end_date):
     if start_date and end_date:
         query["timestamp"] = {"$gte": start_date, "$lt": end_date}
     for document in collection.find(query):
+        kw_list.append(document['new_keyword'])
+
+    client_2 = MongoClient("mongodb+srv://userdb2:userdb2@cluster0.whf1ljw.mongodb.net/?retryWrites=true&w=majority")
+    db_today_2= client_2["TodayNews"]
+    collection_2 = db_today_2[collection_name]
+    if start_date and end_date:
+        query["timestamp"] = {"$gte": start_date, "$lt": end_date}
+    for document in collection_2.find(query):
         kw_list.append(document['new_keyword'])
         
     return  kw_list
@@ -156,29 +189,49 @@ def get_tol_col_data(start_date,end_date):
 
         for document in collection.find(query):
             kw_list.append(document['new_keyword'])
+
+    client_2 = MongoClient("mongodb+srv://userdb2:userdb2@cluster0.whf1ljw.mongodb.net/?retryWrites=true&w=majority")
+    db_today_2= client_2["TodayNews"]
+    kw_list = []
+    for collection_name in total_topic:
+        collection_2 = db_today_2[collection_name]
+        if start_date and end_date:
+            query["timestamp"] = {"$gte": start_date, "$lt": end_date}
+
+        for document in collection_2.find(query):
+            kw_list.append(document['new_keyword'])
     return kw_list
 
 def get_DB_News_data(topic):
     # 連接到 MongoDB
     client = MongoClient("mongodb+srv://user1:user1@cluster0.ronm576.mongodb.net/?retryWrites=true&w=majority")
     db = client['News']
+    # 連接到 MongoDB
+    client_2 = MongoClient("mongodb+srv://userdb2:userdb2@cluster0.whf1ljw.mongodb.net/?retryWrites=true&w=majority")
+    db_2 = client_2['News']
 
     current_datetime = datetime.now()
     end_datetime = current_datetime.replace(hour=0, minute=0, second=0, microsecond=0)
     start_datetime = end_datetime - timedelta(days=1)
-
+    print(start_datetime)
+    print(end_datetime)
     collection = db[topic]
+    collection_2 = db_2[topic]
     pipeline = [
         {'$match': {'timestamp': {"$gte": start_datetime, "$lte": end_datetime}}},
         {"$sort": {"timestamp": -1}}
         #,{"$limit": 10}
     ]
 
-    data = collection.aggregate(pipeline)
+    data = list(collection.aggregate(pipeline))
+    data_2 = list(collection_2.aggregate(pipeline))
+    data.extend(data_2)
     #print("這個是data:",list(data))
-    return list(data)
+    return data
 
 #print(get_DB_News_data("運動"))
+
+
 
 def calculate_keywords(keywords_list):
 
@@ -196,7 +249,8 @@ def calculate_keywords(keywords_list):
 def get_subject_col_data(collection_name,option):
     client = MongoClient("mongodb+srv://user1:user1@cluster0.ronm576.mongodb.net/TodayNews?retryWrites=true&w=majority")
     db_daily = client['關鍵每一天']
-    db=client['News']
+    client_2 = MongoClient("mongodb+srv://userdb2:userdb2@cluster0.whf1ljw.mongodb.net/?retryWrites=true&w=majority")
+    db_daily_2 = client_2['關鍵每一天']
     current_datetime = datetime.now()
     
     if option == 'daily':
@@ -211,11 +265,15 @@ def get_subject_col_data(collection_name,option):
     else:
       return
     collection = db_daily[collection_name]
+    collection_2 = db_daily_2[collection_name]
     end_datetime=end_datetime.strftime("%Y-%m-%d")
     start_datetime=start_datetime.strftime("%Y-%m-%d")
     print("關鍵字找:大於等於",start_datetime,"小於",end_datetime)
-    documents = collection.find({"date": {"$gte": start_datetime, "$lt": end_datetime}})
-    
+    documents = list(collection.find({"date": {"$gte": start_datetime, "$lt": end_datetime}}))
+    documents_2 = list(collection_2.find({"date": {"$gte": start_datetime, "$lt": end_datetime}}))
+    documents.extend(documents_2)
+
+
     keywords_list = []
     for document in documents:
         keywords = document.get('keywords')
@@ -225,5 +283,3 @@ def get_subject_col_data(collection_name,option):
     hot_keywords_list=calculate_keywords(keywords_list)
 
     return hot_keywords_list
-
-
