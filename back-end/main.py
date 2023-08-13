@@ -21,6 +21,8 @@ from datetime import datetime,timedelta
 #Kmeans
 from Kmeans.kmeans import *
 from Kmeans.search_news import * 
+#PTT
+from PTT.choose_ptt_title import *
 #停用詞
 stops = []
 with open('Summarize\stopWord_summar.txt', 'r', encoding='utf-8-sig') as f:
@@ -127,19 +129,22 @@ def hot_kw(topic):
 def do_newest_kmeans(topic):
     current_date =(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")
     if topic == '綜合全部':
-        after_total_newest_news_list=newest_news_serch(total_newest_news_list)
-        save_to_kmeans_db('Kmeans新聞','最新',newest_kmeans_news_dataframe(topic,after_total_newest_news_list,current_date))
+        after_total_newest_news_list=newest_news_search(total_newest_news_list)
+        matched_ptt_news_list=choose_ptt_data('最新','',after_total_newest_news_list)
+        save_to_kmeans_db('Kmeans新聞','最新',newest_kmeans_news_dataframe(topic,matched_ptt_news_list,current_date))
     else:
         topic_newest_news_list=get_DB_News_data(topic)
         total_newest_news_list.extend(topic_newest_news_list)
-        after_topic_newest_news_list=newest_news_serch(topic_newest_news_list)
-        save_to_kmeans_db('Kmeans新聞','最新',newest_kmeans_news_dataframe(topic,after_topic_newest_news_list,current_date))
+        after_topic_newest_news_list=newest_news_search(topic_newest_news_list)
+        matched_ptt_news_list=choose_ptt_data('最新','',after_topic_newest_news_list)
+        save_to_kmeans_db('Kmeans新聞','最新',newest_kmeans_news_dataframe(topic,matched_ptt_news_list,current_date))
 
 def do_hot_kmeans(topic,option):
     current_date =(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")
     if topic == '綜合全部':
         total_hot_news_dic,start_news_date,end_news_date=hot_all_search_news(option)
         for keyword,total_hot_news_list in total_hot_news_dic.items():
+            total_hot_news_list=choose_ptt_data('熱門',keyword,total_hot_news_list)
             if option =='daily':
                 save_to_kmeans_db('Kmeans新聞','當日熱門',hot_kmeans_news_dataframe(topic,keyword,total_hot_news_list,start_news_date,end_news_date,current_date))
             elif option =='weekly':
@@ -150,6 +155,7 @@ def do_hot_kmeans(topic,option):
     else:
         topic_hot_news_dic,start_news_date,end_news_date=hot_topic_search_news(topic,option)
         for keyword,topic_hot_news_list in topic_hot_news_dic.items():
+            topic_hot_news_list=choose_ptt_data('熱門',keyword,topic_hot_news_list)
             if option =='daily':
                 save_to_kmeans_db('Kmeans新聞','當日熱門',hot_kmeans_news_dataframe(topic,keyword,topic_hot_news_list,start_news_date,end_news_date,current_date))
             elif option =='weekly':
@@ -255,13 +261,13 @@ if __name__ == '__main__':
     copy_to_db()
 
     #找關鍵每一天
-    topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經","綜合全部"] # 
+    topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經","綜合全部"] # 順序不能換
     for topic in topics:
         hot_kw(topic)
 
 
     #做Kmeans
-    topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經","綜合全部"] # 
+    topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經","綜合全部"] # 順序不能換
     #熱門系列
     for topic in topics:
         for option in ['daily','weekly','monthly']:

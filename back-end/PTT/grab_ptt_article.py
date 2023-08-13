@@ -1,10 +1,4 @@
-#注意事項 第一次執行時請幫我先執行
-#create_table
-#read_ptt_link_search_data_from_excel()
-#read_ptt_subtopic_id_data_from_excel()
-#這兩個funtion(在程式最下面三行) 以便建立基本資料 執行完確定資料庫有資料就幫我command掉
-#接著只要執行update_ptt_data() 就可以進行ptt的爬蟲了
- 
+
 import requests 
 import pandas as pd
 from selenium import webdriver
@@ -63,7 +57,7 @@ def renew_ptt_subtopic_table_to_database(ptt_renewed_link_list):
         update_query = "UPDATE tb_ptt_search_link SET page = %s WHERE id_ptt_link = %s"
 
         # 执行更新
-        data = (ptt_renewed_link['id_ptt_link'], ptt_renewed_link['page'])
+        data = ( ptt_renewed_link['page'],ptt_renewed_link['id_ptt_link'])
         cursor.execute(update_query, data)
 
         # 提交更改
