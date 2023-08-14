@@ -260,7 +260,7 @@
             <div class="card h-100 pb-2" style="width: 675px;">
               <div class="row g-0">
                 <div class="h-75 col col-md-4 pb-1 d-flex align-items-center justify-content-center rounded-start">
-                  <a href="{{ news.url }}" target="_blank">
+                  <a href="{{ news.url }}">
                     {% if news.image != "None" %}
                       <img src="{{ news.image }}" class="img-fluid rounded">
                     {% else %}
@@ -271,15 +271,14 @@
                 <!-- card 內容 -->
                 <div class="col-md-8 col-sm-12 h-75 rounded-bottom" style="background-color: #C2C8C6;">
                   <div class="card-body">
-                    <a class="card-title" href="{{ news.url }}" target="_blank">{{ news.title }}</a>
+                    <a class="card-title" href="{{ news.url }}">{{ news.title }}</a>
                     <p class="card-text mt-2">
                       {% if news.summary|length > 100 %}
-                        {{ news.summary[:100] }}...<a href="{{ news.url }}" target="_blank">查看完整內容</a>
+                        {{ news.summary[:100] }}...<a href="{{ news.url }}">查看完整內容</a>
                       {% else %}
                         {{ news.summary }}
                       {% endif %}
                     </p>
-                    <a href="{{ ptt_url }}" class="card-link" target="_blank">{{ ptt_title }}</a>
                   </div>
                 </div>
                 
@@ -334,9 +333,9 @@
                 </form>
                 {%endif%}
                 <div class="col-6 ptt-link">
-                  <a href="{{ ptt_url }}">PTT-post</a>
-                  <a href="{{ ptt_url }}">PTT-post</a>
-                  <a href="{{ ptt_url }}">PTT-post</a>
+                  <ul><a href="{{news.ptt_url_1}}">{{news.ptt_title_1}}</a></ul>
+                  <ul><a href="{{news.ptt_url_2}}">{{news.ptt_title_2}}</a></ul>
+                  <ul><a href="{{news.ptt_url_3}}">{{news.ptt_title_3}}</a></ul> 
                 </div>
       
               </div>

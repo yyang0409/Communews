@@ -221,7 +221,6 @@
                         {{ news.summary }}
                       {% endif %}
                     </p>
-                    <a href="{{ptt_url}}" class="card-link" target="_blank">{{ptt_title}}</a>
                   </div>
                 </div>
                 {% if user.is_authenticated %}
@@ -277,9 +276,9 @@
                 
 
                 <div class="col-6 ptt-link">
-                  <a href="{{ptt_url}}">PTT-post</a>
-                  <a href="{{ptt_url}}">PTT-post</a>
-                  <a href="{{ptt_url}}">PTT-post</a>
+                  <ul><a href="{{news.ptt_url_1}}">{{news.ptt_title_1}}</a></ul>
+                  <ul><a href="{{news.ptt_url_2}}">{{news.ptt_title_2}}</a></ul>
+                  <ul><a href="{{news.ptt_url_3}}">{{news.ptt_title_3}}</a></ul> 
                 </div>
               </div>
               
