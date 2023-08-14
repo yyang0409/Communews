@@ -14,6 +14,9 @@ import pandas as pd
 import os
 import json
 from DB.mongodb import *
+from transformers import AutoTokenizer, AutoModel
+import torch
+
 
 
 
@@ -299,23 +302,4 @@ def hot_run_kmeans_from_df(df,cluster_num):
     result_list = df_return.to_dict(orient='records')
     #print(result_list)
     return result_list
-
-def convert_to_dataframe(keyword_news_data):
-    data = []
-    for news in keyword_news_data:
-        data.append(news['document'])
-    return pd.DataFrame(data)
-
-def calculate_tfidf(news_text, keywords):
-    try:
-        vectorizer = TfidfVectorizer()
-        tfidf_matrix = vectorizer.fit_transform(news_text)
-        query_vector = vectorizer.transform([keywords])  # 把關鍵字轉換成TF-IDF向量
-    except ValueError:
-        print("ValueError: The documents only contain stop words or have no content.")
-        return None
-
-    # 計算相似性
-    similarity_scores = cosine_similarity(tfidf_matrix, query_vector)
-    return similarity_scores.flatten()
 
