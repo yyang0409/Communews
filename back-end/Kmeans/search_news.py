@@ -73,7 +73,7 @@ def hot_all_search_news(option):
         news_text = [news['combined_text'] for news in keyword_news_data]
 
         # 計算TF-IDF相似性分數
-        similarity_scores = calculate_bert_similarity(news_text, keyword)
+        similarity_scores = calculate_tfidf(news_text, keyword)
 
         
         # 把相似性分數加回每個新聞的資料中
@@ -181,7 +181,7 @@ def hot_topic_search_news(collection_name, option):
         news_text = [news['combined_text'] for news in keyword_news_data]
 
         # 计算TF-IDF相似性分数
-        similarity_scores = calculate_bert_similarity(news_text, keyword)
+        similarity_scores = calculate_tfidf(news_text, keyword)
 
         # 把相似性分数加回每个新闻的数据中
         for i, news in enumerate(keyword_news_data):
@@ -219,25 +219,3 @@ def calculate_tfidf(news_text, keywords):
     similarity_scores = cosine_similarity(tfidf_matrix, query_vector)
     return similarity_scores.flatten()
 
-    
-model_name = "bert-base-chinese"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModel.from_pretrained(model_name)
-def calculate_bert_similarity(news_text_list, keyword):
-        try:
-            model_name = "bert-base-chinese"
-            tokenizer = AutoTokenizer.from_pretrained(model_name)
-            model = AutoModel.from_pretrained(model_name)
-            inputs = tokenizer(news_text_list, [keyword] * len(news_text_list), return_tensors="pt", padding=True, truncation=True)
-
-            with torch.no_grad():
-                outputs = model(**inputs)
-                news_embeddings = outputs.last_hidden_state[:, 0, :]  
-                keyword_embedding = outputs.last_hidden_state[:, 1, :]  
-
-            cosine_similarity_scores = cosine_similarity(news_embeddings, keyword_embedding)
-        
-            return cosine_similarity_scores.flatten()
-        except ValueError:
-            print("ValueError: The documents only contain stop words or have no content.")
-            return None

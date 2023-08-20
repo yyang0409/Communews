@@ -113,6 +113,7 @@ CREATE TABLE `tb_ptt_data` (
   `id_ptt_data` int(11) NOT NULL AUTO_INCREMENT,
   `subtopic` varchar(45) COLLATE utf8mb4_unicode_ci NOT NULL,
   `title` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `content` TEXT COLLATE utf8mb4_unicode_ci NOT NULL,
   `link` varchar(400) COLLATE utf8mb4_unicode_ci NOT NULL,
   `date` date NOT NULL,
   `page` int(11) NOT NULL,
