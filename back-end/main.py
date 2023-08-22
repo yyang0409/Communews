@@ -168,13 +168,10 @@ def do_hot_kmeans(topic,option):
         
 if __name__ == '__main__':
 
-    #爬取ptt資料
-    #update_ptt_data()
-
-    #清空前天爬蟲
+    #清空前天新聞爬蟲(TodayNews)
     clean_todaydb()
 
-    #爬蟲
+    #新聞爬蟲
     kw_topics=["運動","生活"]#         
     subtopics = ['足球','排球','田徑','中職','MLB','日職','韓職','中信兄弟','味全龍','統一獅','樂天桃猿','富邦悍將','台鋼雄鷹',
                  'MLB 洋基','MLB 紅襪','MLB 光芒','MLB 金鶯','MLB 藍鳥','MLB 守護者','MLB 白襪','MLB 皇家','MLB 老虎','MLB 雙城','MLB 太空人','MLB 運動家','MLB 水手','MLB 天使',
@@ -198,7 +195,7 @@ if __name__ == '__main__':
                 kw(topic,"氣象")
             except Exception as e:
                 pass
-    #爬蟲
+    #新聞爬蟲
     url_topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經"] #
     for topic in url_topics:
         if topic in ["運動"]:
@@ -262,7 +259,7 @@ if __name__ == '__main__':
             except Exception as e:
                 pass
 
-    #複製去大資料庫
+    #把新聞複製去大資料庫
     copy_to_db()
 
     #找關鍵每一天
@@ -270,8 +267,10 @@ if __name__ == '__main__':
     for topic in topics:
         hot_kw(topic)
 
+    #爬PTT
+    update_ptt_data()
 
-    #做Kmeans
+    #做Kmeans + PTT 比對
     total_newest_news_list = []
     topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經","綜合全部"] # 順序不能換
     #熱門系列
