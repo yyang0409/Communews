@@ -13,6 +13,7 @@ import pymysql
 from authlib.integrations.flask_client import OAuth
 from search_news import *
 from word2vec import *
+from choose_ptt_title import *
 
 myclient = pymongo.MongoClient("mongodb+srv://user2:user2@cluster0.zgtguxv.mongodb.net/?retryWrites=true&w=majority")
 # 建立資料庫連接
@@ -673,6 +674,7 @@ def show():
                 # 計算每個新聞的星星數量
                 stars_count_dict = {}
                 for keyword, news_list in combined_data.items():
+                    choose_ptt_data("",news_list)
                     for news_dict in news_list:
                         news_id = news_dict.get('_id')
                         # 將 ObjectId 轉換成字符串形式
@@ -733,6 +735,7 @@ def hashtag(type,keyword,topicname):
                 like_status_dict = {keyword: collection_loader(keyword)[0]}
                 # 計算每個新聞的星星數量
                 for keyword, news_list in all_data.items():
+                    choose_ptt_data("",news_list)
                     for news_dict in news_list:
                         news_id = news_dict.get('_id')
                         # 將 ObjectId 轉換成字符串形式

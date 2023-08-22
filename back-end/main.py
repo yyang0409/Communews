@@ -23,6 +23,7 @@ from Kmeans.kmeans import *
 from Kmeans.search_news import * 
 #PTT
 from PTT.choose_ptt_title import *
+from PTT.grab_ptt_article import *
 #停用詞
 stops = []
 with open('Summarize\stopWord_summar.txt', 'r', encoding='utf-8-sig') as f:
@@ -167,6 +168,9 @@ def do_hot_kmeans(topic,option):
         
 if __name__ == '__main__':
 
+    #爬取ptt資料
+    #update_ptt_data()
+
     #清空前天爬蟲
     clean_todaydb()
 
@@ -268,18 +272,18 @@ if __name__ == '__main__':
 
 
     #做Kmeans
-    #topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經","綜合全部"] # 順序不能換
-    #熱門系列
-    #for topic in topics:
-        #for option in ['daily','weekly','monthly']:
-            #print("熱門:",topic,option)
-            #do_hot_kmeans(topic,option)
-    
-    #最新系列
     total_newest_news_list = []
-    #for topic in topics:
-        #print("最新:",topic)
-        #do_newest_kmeans(topic)
+    topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經","綜合全部"] # 順序不能換
+    #熱門系列
+    for topic in topics:
+        for option in ['daily','weekly','monthly']:
+            print("熱門:",topic,option)
+            do_hot_kmeans(topic,option)
+        #最新系列
+        print("最新:",topic)
+        do_newest_kmeans(topic)
+
+        
 
     
 
