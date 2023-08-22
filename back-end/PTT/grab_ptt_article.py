@@ -90,10 +90,10 @@ def renew_ptt_subtopic_table_index(id_ptt_link,id_subtopic,subtopic,URL,page_ind
     return dic
 
 def is_gossiping(id_subtopic):
-    if id_subtopic==30:
+    is_gossiping_subtopic=[30,31,32,33,34,35,39]
+    if id_subtopic in is_gossiping_subtopic:
         return True
     return False
-
 
 
 def grab_ptt_article_everyday(df_ptt_subtopic):
@@ -120,7 +120,11 @@ def grab_ptt_article_everyday(df_ptt_subtopic):
         time.sleep(2)
         is_search_next_page = True
         while(is_search_next_page==True):
+            print(count)
+            print(id_subtopic)
+            print(is_gossiping(id_subtopic))
             if count==1 and is_gossiping(id_subtopic) :
+                print('我進來if了馬德')
                 time.sleep(1)
                 elem_yes = (driver.find_element(By.XPATH, '//html/body/div[2]/form/div[1]/button'))
                 time.sleep(1)
@@ -231,7 +235,7 @@ def update_ptt_data():
 
 
 #爬取ptt資料
-update_ptt_data()
+#update_ptt_data()
 
     
 
