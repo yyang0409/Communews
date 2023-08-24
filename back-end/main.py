@@ -1,5 +1,4 @@
 #情緒分析
-import datetime
 from cemotion import Cemotion
 from hanziconv import HanziConv
 c = Cemotion()
@@ -17,13 +16,14 @@ import pandas as pd
 import numpy as np
 #資料庫
 from DB.mongodb import *
-from datetime import datetime,timedelta
 #Kmeans
 from Kmeans.kmeans import *
 from Kmeans.search_news import * 
 #PTT
 from PTT.choose_ptt_title import *
 from PTT.grab_ptt_article import *
+from MySQL.copy_cloud_to_local import *
+from datetime import datetime,timedelta
 #停用詞
 stops = []
 with open('Summarize\stopWord_summar.txt', 'r', encoding='utf-8-sig') as f:
@@ -168,7 +168,7 @@ def do_hot_kmeans(topic,option):
         
 if __name__ == '__main__':
 
-    #清空前天新聞爬蟲(TodayNews)
+     #清空前天新聞爬蟲(TodayNews)
     clean_todaydb()
 
     #新聞爬蟲
@@ -267,20 +267,25 @@ if __name__ == '__main__':
     for topic in topics:
         hot_kw(topic)
 
+    print("爬完新聞的時間:",datetime.now())
+
     #爬PTT
-    update_ptt_data()
+    #update_ptt_data()
+
+    #將mysql雲端複製到本地端
+    copy()
 
     #做Kmeans + PTT 比對
     total_newest_news_list = []
-    topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經","綜合全部"] # 順序不能換
+    #topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經","綜合全部"] # 順序不能換
     #熱門系列
-    for topic in topics:
-        for option in ['daily','weekly','monthly']:
-            print("熱門:",topic,option)
-            do_hot_kmeans(topic,option)
+    #for topic in topics:
+        #for option in ['daily','weekly','monthly']:
+            #print("熱門:",topic,option)
+            #do_hot_kmeans(topic,option)
         #最新系列
-        print("最新:",topic)
-        do_newest_kmeans(topic)
+        #print("最新:",topic)
+        #do_newest_kmeans(topic)
 
         
 
