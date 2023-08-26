@@ -1,5 +1,4 @@
 #情緒分析
-import datetime
 from cemotion import Cemotion
 from hanziconv import HanziConv
 c = Cemotion()
@@ -17,19 +16,21 @@ import pandas as pd
 import numpy as np
 #資料庫
 from DB.mongodb import *
-from datetime import datetime,timedelta
 #Kmeans
 from Kmeans.kmeans import *
 from Kmeans.search_news import * 
 #PTT
 from PTT.choose_ptt_title import *
+from PTT.grab_ptt_article import *
+from MySQL.copy_cloud_to_local import *
+from datetime import datetime,timedelta
 #停用詞
 stops = []
 with open('Summarize\stopWord_summar.txt', 'r', encoding='utf-8-sig') as f:
     for line in f.readlines():
         stops.append(line.strip())
 
-def dataframe(topic,subtopic,title,URL,image_url,content,summary,emotion_value,new_keyword,converted_date):
+def dataframe(topic,subtopic,title,URL,image_url,content,summary,emotion_value,new_keyword,converted_date,keyword_weight):
     
     insert_data = {
                 "topic":topic,
@@ -42,7 +43,8 @@ def dataframe(topic,subtopic,title,URL,image_url,content,summary,emotion_value,n
                 "emotion_value":emotion_value,
                 "views":0,
                 "new_keyword":new_keyword,
-                "timestamp":converted_date
+                "timestamp":converted_date,
+                "keyword_weight":keyword_weight
                 }
     return insert_data
 
@@ -88,10 +90,10 @@ def kw(topic,subtopic):
         processed_summary=HanziConv.toSimplified(summary)
         emotion_value=c.predict(processed_summary)
         emotion_value = float("{:.6f}".format(emotion_value))
-        new_keywords=get_keyword(title,summary)
+        new_keywords,keyword_weight=get_keyword(title,summary)
         spider_date=get_date(URL)
         converted_date = datetime.fromisoformat(spider_date[:-1])
-        save_to_db("TodayNews",topic,dataframe(topic,subtopic,title,URL,image_url,content,summary,emotion_value,new_keywords,converted_date))  #放進資料庫
+        save_to_db("TodayNews",topic,dataframe(topic,subtopic,title,URL,image_url,content,summary,emotion_value,new_keywords,converted_date,keyword_weight))  #放進資料庫
 
 def url(topic,subtopic,spider_url):
     title_list,URL_list,image_list=grab_yahoo_url(spider_url)
@@ -108,10 +110,10 @@ def url(topic,subtopic,spider_url):
         processed_summary=HanziConv.toSimplified(summary)
         emotion_value=c.predict(processed_summary)
         emotion_value = float("{:.6f}".format(emotion_value))
-        new_keywords=get_keyword(title,summary)
+        new_keywords,keyword_weight=get_keyword(title,summary)
         spider_date=get_date(URL)
         converted_date = datetime.fromisoformat(spider_date[:-1])
-        save_to_db("TodayNews",topic,dataframe(topic,subtopic,title,URL,image_url,content,summary,emotion_value,new_keywords,converted_date))  #放進資料庫
+        save_to_db("TodayNews",topic,dataframe(topic,subtopic,title,URL,image_url,content,summary,emotion_value,new_keywords,converted_date,keyword_weight))  #放進資料庫
 
 def hot_kw(topic):
     current_date =(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")
@@ -130,13 +132,13 @@ def do_newest_kmeans(topic):
     current_date =(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")
     if topic == '綜合全部':
         after_total_newest_news_list=newest_news_search(total_newest_news_list)
-        matched_ptt_news_list=choose_ptt_data('最新','',after_total_newest_news_list)
+        matched_ptt_news_list=choose_ptt_data('最新',after_total_newest_news_list)
         save_to_kmeans_db('Kmeans新聞','最新',newest_kmeans_news_dataframe(topic,matched_ptt_news_list,current_date))
     else:
         topic_newest_news_list=get_DB_News_data(topic)
         total_newest_news_list.extend(topic_newest_news_list)
         after_topic_newest_news_list=newest_news_search(topic_newest_news_list)
-        matched_ptt_news_list=choose_ptt_data('最新','',after_topic_newest_news_list)
+        matched_ptt_news_list=choose_ptt_data('最新',after_topic_newest_news_list)
         save_to_kmeans_db('Kmeans新聞','最新',newest_kmeans_news_dataframe(topic,matched_ptt_news_list,current_date))
 
 def do_hot_kmeans(topic,option):
@@ -144,7 +146,7 @@ def do_hot_kmeans(topic,option):
     if topic == '綜合全部':
         total_hot_news_dic,start_news_date,end_news_date=hot_all_search_news(option)
         for keyword,total_hot_news_list in total_hot_news_dic.items():
-            total_hot_news_list=choose_ptt_data('熱門',keyword,total_hot_news_list)
+            total_hot_news_list=choose_ptt_data('熱門',total_hot_news_list)
             if option =='daily':
                 save_to_kmeans_db('Kmeans新聞','當日熱門',hot_kmeans_news_dataframe(topic,keyword,total_hot_news_list,start_news_date,end_news_date,current_date))
             elif option =='weekly':
@@ -155,7 +157,7 @@ def do_hot_kmeans(topic,option):
     else:
         topic_hot_news_dic,start_news_date,end_news_date=hot_topic_search_news(topic,option)
         for keyword,topic_hot_news_list in topic_hot_news_dic.items():
-            topic_hot_news_list=choose_ptt_data('熱門',keyword,topic_hot_news_list)
+            topic_hot_news_list=choose_ptt_data('熱門',topic_hot_news_list)
             if option =='daily':
                 save_to_kmeans_db('Kmeans新聞','當日熱門',hot_kmeans_news_dataframe(topic,keyword,topic_hot_news_list,start_news_date,end_news_date,current_date))
             elif option =='weekly':
@@ -166,10 +168,10 @@ def do_hot_kmeans(topic,option):
         
 if __name__ == '__main__':
 
-    #清空前天爬蟲
+     #清空前天新聞爬蟲(TodayNews)
     clean_todaydb()
 
-    #爬蟲
+    #新聞爬蟲
     kw_topics=["運動","生活"]#         
     subtopics = ['足球','排球','田徑','中職','MLB','日職','韓職','中信兄弟','味全龍','統一獅','樂天桃猿','富邦悍將','台鋼雄鷹',
                  'MLB 洋基','MLB 紅襪','MLB 光芒','MLB 金鶯','MLB 藍鳥','MLB 守護者','MLB 白襪','MLB 皇家','MLB 老虎','MLB 雙城','MLB 太空人','MLB 運動家','MLB 水手','MLB 天使',
@@ -193,7 +195,7 @@ if __name__ == '__main__':
                 kw(topic,"氣象")
             except Exception as e:
                 pass
-    #爬蟲
+    #新聞爬蟲
     url_topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經"] #
     for topic in url_topics:
         if topic in ["運動"]:
@@ -257,7 +259,7 @@ if __name__ == '__main__':
             except Exception as e:
                 pass
 
-    #複製去大資料庫
+    #把新聞複製去大資料庫
     copy_to_db()
 
     #找關鍵每一天
@@ -265,20 +267,27 @@ if __name__ == '__main__':
     for topic in topics:
         hot_kw(topic)
 
+    print("爬完新聞的時間:",datetime.now())
 
-    #做Kmeans
-    topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經","綜合全部"] # 順序不能換
-    #熱門系列
-    for topic in topics:
-        for option in ['daily','weekly','monthly']:
-            print("熱門:",topic,option)
-            do_hot_kmeans(topic,option)
-    
-    #最新系列
+    #爬PTT
+    #update_ptt_data()
+
+    #將mysql雲端複製到本地端
+    copy()
+
+    #做Kmeans + PTT 比對
     total_newest_news_list = []
-    for topic in topics:
-        print("最新:",topic)
-        do_newest_kmeans(topic)
+    #topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經","綜合全部"] # 順序不能換
+    #熱門系列
+    #for topic in topics:
+        #for option in ['daily','weekly','monthly']:
+            #print("熱門:",topic,option)
+            #do_hot_kmeans(topic,option)
+        #最新系列
+        #print("最新:",topic)
+        #do_newest_kmeans(topic)
+
+        
 
     
 
