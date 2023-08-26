@@ -11,8 +11,8 @@ import numpy as np
 def get_all_ptt_by_topic(topic,news_datetime,connection):
  
     cursor = connection.cursor()
-    start_date = (news_datetime - timedelta(days=1)).date()
-    end_date = (news_datetime + timedelta(days=1)).date()
+    start_date = (news_datetime - timedelta(days=2)).date()
+    end_date = (news_datetime + timedelta(days=2)).date()
     # SQL查询语句
     select_query = "SELECT * FROM tb_ptt_data AS a INNER JOIN tb_subtopic AS b ON a.subtopic = b.subtopic_value WHERE b.topic = %s AND date BETWEEN %s AND %s"
     # 执行查询
@@ -50,12 +50,12 @@ def filter_related_ptt_by_keywords(df_ptt, news_keywords):
 
 
 def choose_ptt_data(news_type,news_list):
-    host = 'communews.ctqdwhl8sobn.us-east-1.rds.amazonaws.com'
-    user = 'mysqluser'
-    password = 'mysqluser'
-    #host = '127.0.0.1'
-    #user = 'root'
-    #password = '109403502'
+    #host = 'communews.ctqdwhl8sobn.us-east-1.rds.amazonaws.com'
+    #user = 'mysqluser'
+    #password = 'mysqluser'
+    host = '127.0.0.1'
+    user = 'root'
+    password = '109403502'
     database = 'communews'
     charset =  "utf8"
         
