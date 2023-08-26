@@ -50,7 +50,8 @@ def ws_zh(text):
     return words[0]
 
 def get_input_keyword(usr_input): 
-    if len(usr_input)>2:
+    usr_input = usr_input.strip()  # 剔除输入字符串的空白字符
+    if len(usr_input)>3:
         usr_input = ws_zh(usr_input)
         return usr_input
     else:
@@ -88,6 +89,41 @@ def gen_kw_search_news(usr_input):
             }
         ]
 
+        # 建立一個空的列表來保存查詢結果
+        keyword_news_data = []
+
+        for collection_name in total_subject:
+                news_data = list(db[collection_name].aggregate(pipeline))
+                keyword_news_data.extend(news_data)  # 把查詢結果加入列表
+                news_data_2 = list(db_2[collection_name].aggregate(pipeline))
+                keyword_news_data.extend(news_data_2)  # 把查詢結果加入列表
+
+        if len(keyword_news_data) < 20:
+            print("不夠")
+            pipeline = [
+            {
+                '$match': {
+                    '$or': [
+                        {'title': {'$regex': f'.*{keyword}.*', '$options': 'i'}},
+                        {'summary': {'$regex': f'.*{keyword}.*', '$options': 'i'}}
+                    ]
+                }   
+            },
+            {"$sort": {"timestamp": -1}},
+            {"$limit": 200},
+            {
+                '$project': {
+                    'document': '$$ROOT',  # 將整個文檔添加到document欄位中
+                    'combined_text': {'$concat': ['$title', ' ', '$summary']},  # 新增combined_text字段
+                    'timestamp': '$timestamp'  # 保存時間戳
+                }
+            },
+            {
+                '$match': {
+                    'combined_text': {'$exists': True}
+                }
+            }
+        ]        
         # 建立一個空的列表來保存查詢結果
         keyword_news_data = []
 

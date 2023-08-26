@@ -1,4 +1,5 @@
 
+from http import cookies
 import requests 
 import pandas as pd
 from selenium import webdriver
@@ -17,20 +18,23 @@ current_dir = os.getcwd()
 driver_name = "chromedriver.exe"
 driver_path = current_dir+"\\"+driver_name
 
-host = '127.0.0.1'
-user = 'root'
-password = '109403502'
+host = 'communews.ctqdwhl8sobn.us-east-1.rds.amazonaws.com'
+user = 'mysqluser'
+password = 'mysqluser'
+#host = '127.0.0.1'
+#user = 'root'
+#password = '109403502'
 database = 'communews'
 charset =  "utf8"
 
 
 #這一邊要改成輸出到資料庫 需要輸出到 存放ptt內容的資料庫
-def transfer_dictionary(sub_topics,titles,links,dates,page_indexes,emotion_scores):
+def transfer_dictionary(sub_topics,titles,content,links,dates,page_indexes,emotion_scores):
    
     data_list = []
-    for sub_topic,title,link,date,page_index in zip(sub_topics,titles,links,dates,page_indexes):
-        data_list.append({'subtopic':sub_topic,'title':title,'link':link,'date':date,'page':int(page_index)},)
-    print(data_list)
+    for sub_topic,title,content,link,date,page_index in zip(sub_topics,titles,content,links,dates,page_indexes):
+        data_list.append({'subtopic':sub_topic,'title':title,'content':content,'link':link,'date':date,'page':int(page_index)},)
+    #print(data_list)
     return data_list
 
 #將ptt網址的字串進行處理
@@ -86,10 +90,10 @@ def renew_ptt_subtopic_table_index(id_ptt_link,id_subtopic,subtopic,URL,page_ind
     return dic
 
 def is_gossiping(id_subtopic):
-    if id_subtopic==30:
+    is_gossiping_subtopic=[30,31,32,33,34,35,39]
+    if id_subtopic in is_gossiping_subtopic:
         return True
     return False
-
 
 
 def grab_ptt_article_everyday(df_ptt_subtopic):
@@ -99,6 +103,7 @@ def grab_ptt_article_everyday(df_ptt_subtopic):
     dates=[]
     page_indexes=[]
     emotion_scores=[]
+    ptt_content=[]
 
     new_list_ptt_subtopic = []
     
@@ -107,14 +112,19 @@ def grab_ptt_article_everyday(df_ptt_subtopic):
     options.add_experimental_option('prefs', prefs)
     options.add_argument("disable-infobars")
     driver = webdriver.Chrome(executable_path=driver_path,chrome_options=options)
-
+    # 設定Cookie（必要時，用以通過年齡驗證）
+    cookies = {'over18': '1'}
     for id_ptt_link, id_subtopic, subtopic, URL, already_get_index in zip (df_ptt_subtopic['id_ptt_link'],df_ptt_subtopic['id_subtopic'],df_ptt_subtopic['subtopic'],df_ptt_subtopic['ptt_url'],df_ptt_subtopic['page']):
         count=1
         driver.get(URL)
         time.sleep(2)
         is_search_next_page = True
         while(is_search_next_page==True):
+            print(count)
+            print(id_subtopic)
+            print(is_gossiping(id_subtopic))
             if count==1 and is_gossiping(id_subtopic) :
+                print('我進來if了馬德')
                 time.sleep(1)
                 elem_yes = (driver.find_element(By.XPATH, '//html/body/div[2]/form/div[1]/button'))
                 time.sleep(1)
@@ -127,6 +137,7 @@ def grab_ptt_article_everyday(df_ptt_subtopic):
             time.sleep(3)
             current_url =driver.current_url
             is_search_next_page,page_index = split_ptt_link(current_url,already_get_index)
+
             elem_titles = driver.find_elements(By.CSS_SELECTOR, '#main-container > div> div> div.title >a')
             elem_dates = driver.find_elements(By.CSS_SELECTOR, '#main-container > div > div> div> div.date')
             elem_links = driver.find_elements(By.CSS_SELECTOR, '#main-container > div> div> div.title > a')
@@ -134,33 +145,48 @@ def grab_ptt_article_everyday(df_ptt_subtopic):
                 new_list_ptt_subtopic.append(renew_ptt_subtopic_table_index(id_ptt_link,id_subtopic,subtopic,URL,page_index))
                 count+=1
             print("這是關於"+subtopic+"的新聞：")
+            
             if(is_search_next_page==True):
                 for title,date,link in zip (elem_titles,elem_dates,elem_links):
-                    sub_topics.append(subtopic)
-                    titles.append(title.text)
-                    links.append(link.get_attribute('href'))
-                    transfer_date = transfer_date_type(date.text)
-                    dates.append(transfer_date)
-                    page_indexes.append(page_index)
-                    print("標題是"+title.text)
-                    
-
-    datalist = transfer_dictionary(sub_topics,titles,links,dates,page_indexes,emotion_scores)
-    #將更新到的頁數傳回置資
-
+                    try :
+                        sub_topics.append(subtopic)
+                        titles.append(title.text)
+                        links.append(link.get_attribute('href'))
+                        transfer_date = transfer_date_type(date.text)
+                        dates.append(transfer_date)
+                        page_indexes.append(page_index)
+                        print("標題是"+title.text)
+                        # 新增以下程式碼進行內文爬取
+                        content_response = requests.get(link.get_attribute('href'), cookies=cookies)
+                        content_soup = BeautifulSoup(content_response.text, 'html.parser')
+                        content_element = content_soup.find(id='main-content')
+                        # 移除掉文章中的推文部分
+                        for push in content_element.find_all(class_='push'):
+                            push.extract()
+                        # 移除掉不是內文的資訊
+                        for elem in content_element(['div', 'span']):
+                            elem.extract()
+                        # 印出內文
+                        content = content_element.text.strip()
+                        ptt_content.append(content)
+                    except:
+                        pass
+    datalist = transfer_dictionary(sub_topics,titles,ptt_content,links,dates,page_indexes,emotion_scores)
+    #將更新到的頁數傳回至資料庫
     return datalist,new_list_ptt_subtopic
 
-def read_ptt_data():
+
+def read_ptt_data(index):
     connection = mysql.connector.connect(host=host, user=user, password=password, database=database, charset=charset)
 
     cursor = connection.cursor()
 
     # SQL查询语句
-    select_query = "SELECT * FROM tb_ptt_search_link"
+    select_query = "SELECT * FROM tb_ptt_search_link WHERE id_ptt_link = %s"
 
     # 执行查询
     
-    cursor.execute(select_query)
+    cursor.execute(select_query,(index,))
 
     # 获取所有结果
     result = cursor.fetchall()
@@ -180,35 +206,37 @@ def read_ptt_data():
     
 
 def update_ptt_data():
-    ptt_link_df = read_ptt_data()
+    index=1
+    while (index<=126):
+        ptt_link_df = read_ptt_data(index)
 
-    connection = mysql.connector.connect(host=host, user=user, password=password, database=database, charset=charset)
+        connection = mysql.connector.connect(host=host, user=user, password=password, database=database, charset=charset)
 
-    cursor = connection.cursor()
+        cursor = connection.cursor()
 
-    messages,new_list_ptt_subtopic = grab_ptt_article_everyday(ptt_link_df)
-    
-    for message in messages:
-        insert_query = '''
-            INSERT INTO tb_ptt_data (subtopic, title, link, date, page)
-            VALUES (%s, %s, %s, %s, %s)
-        '''
-        data = (message['subtopic'], message['title'], message['link'], message['date'], message['page'])
+        messages,new_list_ptt_subtopic = grab_ptt_article_everyday(ptt_link_df)
+        print(messages)
+        for message in messages:
+            insert_query = '''
+                INSERT INTO tb_ptt_data (subtopic, title, content, link, date, page)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            '''
+            data = (message['subtopic'], message['title'],message['content'], message['link'], message['date'], message['page'])
 
-        cursor.execute(insert_query, data)
+            cursor.execute(insert_query, data)
 
-    connection.commit()
+        renew_ptt_subtopic_table_to_database(new_list_ptt_subtopic)
+        index=index+1
+        connection.commit()
 
     connection.close()
-
-    renew_ptt_subtopic_table_to_database(new_list_ptt_subtopic)
 
 
 
 
 #爬取ptt資料
-update_ptt_data()
-    
+#update_ptt_data()
+
     
 
 
