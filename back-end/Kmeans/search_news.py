@@ -81,8 +81,8 @@ def hot_all_search_news(option):
             news['document']['similarity'] = similarity_scores[i]
 
         df_keyword_news_data = convert_to_dataframe(keyword_news_data)
-        
-        result = hot_run_kmeans_from_df(df_keyword_news_data,int(len(df_keyword_news_data)/2))
+        print(len(df_keyword_news_data))
+        result = hot_run_kmeans_from_df(df_keyword_news_data,int(len(df_keyword_news_data)/10))
         # 按照相似度和時間戳排序
         
         result.sort(key=lambda x: (x['similarity'], x['timestamp']), reverse=True)
