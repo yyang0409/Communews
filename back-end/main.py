@@ -131,7 +131,12 @@ def hot_kw(topic):
 def do_newest_kmeans(topic):
     current_date =(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")
     if topic == '綜合全部':
-        after_total_newest_news_list=newest_news_search(total_newest_news_list)
+        # 使用sorted函數來按時間戳記排序列表
+        sorted_list = sorted(total_newest_news_list, key=lambda x: x['timestamp'], reverse=True)
+        # 只保留最新的200筆資料
+        latest_200_news = sorted_list[:200]
+
+        after_total_newest_news_list=newest_news_search(latest_200_news)
         matched_ptt_news_list=choose_ptt_data('最新',after_total_newest_news_list)
         save_to_kmeans_db('Kmeans新聞','最新',newest_kmeans_news_dataframe(topic,matched_ptt_news_list,current_date))
     else:
@@ -273,7 +278,7 @@ if __name__ == '__main__':
     #update_ptt_data()
 
     #將mysql雲端複製到本地端
-    copy()
+    #copy()
 
     #做Kmeans + PTT 比對
     total_newest_news_list = []
