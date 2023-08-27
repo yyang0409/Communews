@@ -674,7 +674,7 @@ def show():
                 # 計算每個新聞的星星數量
                 stars_count_dict = {}
                 for keyword, news_list in combined_data.items():
-                    choose_ptt_data("",news_list)
+                    news_list=choose_ptt_data("",news_list)
                     for news_dict in news_list:
                         news_id = news_dict.get('_id')
                         # 將 ObjectId 轉換成字符串形式
@@ -696,7 +696,8 @@ def show():
                 for extend_keyword in extend_keywords:
                     extend_data,all_extend_data_news=gen_kw_search_news(extend_keyword)
                     combined_data.update(extend_data)
-                    
+            for keyword, news_list in combined_data.items():
+                news_list=choose_ptt_data("",news_list)
             return render_template('show.html',combined_data=combined_data, user=g.user,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict)
     return redirect(url_for('index'))   
 
@@ -735,7 +736,7 @@ def hashtag(type,keyword,topicname):
                 like_status_dict = {keyword: collection_loader(keyword)[0]}
                 # 計算每個新聞的星星數量
                 for keyword, news_list in all_data.items():
-                    choose_ptt_data("",news_list)
+                    news_list=choose_ptt_data("",news_list)
                     for news_dict in news_list:
                         news_id = news_dict.get('_id')
                         # 將 ObjectId 轉換成字符串形式
@@ -756,6 +757,8 @@ def hashtag(type,keyword,topicname):
                 return render_template('hashtag.html',type=type,topicname=topicname,keyword=result['keyword'],news_list=result['news_list'],like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
             else:
                 data,all_data =gen_kw_search_news(keyword)
+                for keyword, news_list in all_data.items():
+                    news_list=choose_ptt_data("",news_list)
                 return render_template('hashtag.html',type=type,topicname=topicname,keyword=keyword,news_list=all_data.get(keyword),user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:

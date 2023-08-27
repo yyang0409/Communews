@@ -12,7 +12,7 @@ def train(corpus):
 
 def word2vec(kw):
   try:
-    loaded_model = Word2Vec.load('project_model_0814.model')
+    loaded_model = Word2Vec.load('project_model_0827.model')
     similar_words = loaded_model.wv.most_similar(kw, topn=3)
     filtered_words = [word for word, score in similar_words if score > 0.5]
   except KeyError:
