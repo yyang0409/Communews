@@ -6,6 +6,8 @@ function getRating() {
     let news_id = rate[i].dataset.id; // 取得新聞ID
     let newsTopic = rate[i].dataset.topic; // 取得新聞主題
     let score = parseInt(rate[i].dataset.score); // 將score轉換為整數
+    let keyword_weight = rate[i].dataset.keyword // 取得新聞關鍵字&權重
+
     if (isNaN(score)) {
       score = 0;
     }
@@ -42,7 +44,7 @@ function getRating() {
         // 更新score變數的值為新評分
         score = new_rating;
         printRatingResult(ratingResult, new_rating);
-        sendRatingToBackend(path,news_id, newsTopic, new_rating); // 傳遞關鍵字ID、新聞主題和評分數據
+        sendRatingToBackend(path,news_id, newsTopic, new_rating,keyword_weight); // 傳遞新聞ID、新聞主題和評分數據
       };
     });
   }
@@ -50,14 +52,14 @@ function getRating() {
 
 
 
-function sendRatingToBackend(path,news_id, newsTopic, rating) {
+function sendRatingToBackend(path,news_id, newsTopic, rating,keyword_weight) {
   // 使用Fetch API发送评分数据和新聞主題到后端
   fetch(path, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ action: 'rating', news_id: news_id, topic: newsTopic, rating: rating }) // 將關鍵字ID、新聞主題和評分數據轉換為JSON數據傳遞
+    body: JSON.stringify({ action: 'rating', news_id: news_id, topic: newsTopic, rating: rating, keyword_weight:keyword_weight}) // 將新聞ID、新聞主題和評分數據轉換為JSON數據傳遞
   })
     .then(response => response.json())
     .then(data => {
