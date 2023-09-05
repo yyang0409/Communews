@@ -130,9 +130,9 @@ def do_rating(request):
     news_id = data.get('news_id')
     news_topic = data.get('topic')
     rating = data.get('rating')
-    news_keyword_weight = data.get('keyword')
+    # news_keyword_weight = data.get('keyword')
     have,score=news_score_loader(current_user.user_id,news_id)
-    news_keyword_weight = caculate_rating_weight(news_keyword_weight)
+    # news_keyword_weight = caculate_rating_weight(news_keyword_weight)
     #如果存在 就改分數
     if have =='Y':
         sql_insert = "UPDATE tb_news_score SET score=%s WHERE id_user =%s AND id_news=%s "
@@ -159,55 +159,81 @@ def record_view(request):
     mysql_db = connect_db()
     cursor = mysql_db.cursor()
     data = request.json
+    action = data.get('action') # 執行的動作
     news_id = data.get('news_id') # 正在觀看的新聞id
+    news_keyword  = data.get('keyword_weight') # 新聞關鍵字 & 權重
+    mutiple_rate = 1.0
 
-    print(data)
+    print(action)
 
-    news_keyword  = data.get('keyword_weight')
-    news_keyword = news_keyword.replace("'", '"') # 將單引號換成雙引號
-    dict_news_keyword = ast.literal_eval(news_keyword)
-    # news_keyword_json = json.loads(news_keyword)
-    print(news_keyword)
-    print(type(news_keyword))
-    print(dict_news_keyword)
-    print(type(dict_news_keyword))
+    if action == 'rating':
+        rating = str(data.get('rating'))
+        match rating:
+            case "1": # 權重乘 0.5
+                mutiple_rate = 0.5
+            case "2": # 權重乘 0.8
+                mutiple_rate = 0.8
+            case "3": # 權重乘 1
+                mutiple_rate = 1.0
+            case "4": # 權重乘 1.1
+                mutiple_rate = 1.1
+            case "5": # 權重乘 1.2
+                mutiple_rate = 1.2
+    elif action == 'view':
+        mutiple_rate = 1.0
 
-    query = "INSERT INTO tb_news_view (id_user,id_news,news_keyword,date) VALUES (%s,%s,%s,%s)"
-    insert_data = (current_user.user_id,news_id,dict_news_keyword,dt.date.today().strftime("%Y-%m-%d"))
-    cursor.execute(query,insert_data)
-    mysql_db.commit()
+    print(type(rating))
+    print(mutiple_rate)
+    if news_keyword == "nan": # 若沒有關鍵字 & 權重，直接存nan
+        json_news_keyword = json.dumps(news_keyword)
+        query = "INSERT INTO tb_news_view (id_user,id_news,news_keyword,date) VALUES (%s,%s,%s,%s)"
+        insert_data = (current_user.user_id,news_id,json_news_keyword,dt.date.today().strftime("%Y-%m-%d"))
+        cursor.execute(query,insert_data)
+        mysql_db.commit()
+    else:
+        dict_news_keyword = eval(news_keyword) # 轉成dict type
+        json_news_keyword = json.dumps(dict_news_keyword) # 轉成 JSON strgin 格式
+        print(dict_news_keyword)
+        print(type(dict_news_keyword))
+        query = "INSERT INTO tb_news_view (id_user,id_news,news_keyword,date) VALUES (%s,%s,%s,%s)"
+        insert_data = (current_user.user_id,news_id,json_news_keyword,dt.date.today().strftime("%Y-%m-%d"))
+        cursor.execute(query,insert_data)
+        mysql_db.commit()
 
-    keyword_compare(current_user.user_id,dict_news_keyword)
-    
+        keyword_compare(current_user.user_id,json_news_keyword,mutiple_rate)
+
 # 比對觀看新聞的關鍵字與該user所有看過新聞的關鍵字有無一樣的關鍵字，若有則將權重相加並記錄到tb_user_keyword_weight
-def keyword_compare(user_id,news_keyword):
+def keyword_compare(user_id,json_news_keyword,mutiple_rate):
     mysql_db = connect_db()
     cursor = mysql_db.cursor()
     query = "SELECT * FROM tb_user_keyword_weight WHERE id_user = %s"
     cursor.execute(query,(user_id))
     result = cursor.fetchone()
     user_keyword_weight = json.loads(result['keyword_list']) # user 看過新聞的所有關鍵字 型態為dictionary
-    user_keyword_weight = calculate_keyword_weight(user_keyword_weight,news_keyword)
+    user_keyword_weight = calculate_keyword_weight(user_keyword_weight,json_news_keyword,mutiple_rate)
+    json_user_keyword_weight = json.dumps(user_keyword_weight)
     # 更新使用者關鍵字字典
-    query = "UPDATE tb_user_keyword_weight SET keyword_weight = %s WHERE id_user = %s"
-    cursor.execute(query,(user_keyword_weight,user_id))
+    query = "UPDATE tb_user_keyword_weight SET keyword_list = %s WHERE id_user = %s"
+    cursor.execute(query,(json_user_keyword_weight,user_id))
     mysql_db.commit()
     
         
-def calculate_keyword_weight(user_keyword_weight,news_keyword_weight):
+def calculate_keyword_weight(user_keyword_weight,json_news_keyword,mutiple_rate):
+    news_keyword_weight = json.loads(json_news_keyword) # dict type
+
     user_keywords = list(user_keyword_weight.keys()) # 使用者關鍵字list (沒有權重)
     news_keywords = list(news_keyword_weight.keys()) # 新聞關鍵字list (沒有權重)
 
-    common_keywords = user_keywords & news_keywords # 使用者有看過且該新聞也有的關鍵字
-    keywords_only_in_news = news_keywords - user_keywords # 使用者沒看過的關鍵字
+    common_keywords = set(user_keywords) & set(news_keywords) # 使用者有看過且該新聞也有的關鍵字
+    keywords_only_in_news = set(news_keywords) - set(user_keywords) # 使用者沒看過的關鍵字
 
     # 將相同關鍵字的權重相加並更新於使用者關鍵字字典
     for com_keyword in common_keywords:
-        user_keyword_weight[com_keyword] += news_keyword_weight[com_keyword]
+        user_keyword_weight[com_keyword] = user_keyword_weight[com_keyword] + news_keyword_weight[com_keyword] * mutiple_rate
 
     # 將使用者沒看過得關鍵字新增至使用者關鍵字字典
     for keyword in keywords_only_in_news:
-        user_keyword_weight[keyword] = news_keyword_weight[keyword]
+        user_keyword_weight[keyword] = news_keyword_weight[keyword] * mutiple_rate
 
     # 將使用者關鍵字字典排序
     keys = list(user_keyword_weight.keys())
@@ -215,7 +241,7 @@ def calculate_keyword_weight(user_keyword_weight,news_keyword_weight):
 
     sorted_values_index = np.argsort(values) # 根據weight大小排序，存weight的index值
 
-    user_keyword_weight = {keys[index]: values[index] for index in sorted_values_index}
+    user_keyword_weight = {keys[index]: values[index] for index in sorted_values_index} # dict type
 
     return user_keyword_weight
     
@@ -338,42 +364,7 @@ def register():
 # 建立網站首頁的回應方式
 @app.route("/", methods=['GET','POST'])
 def index():
-    db=myclient['Kmeans新聞']
-    collection=db['最新']
-    if request.method == 'GET':
-        if g.user.is_authenticated:
-            result = collection.find_one({'topic':'綜合全部','date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
-            #print(result)
-            # 取得當前用戶ID
-            current_user_id = g.user.user_id if g.user.is_authenticated else None
-            # 逐一查詢每筆新聞的評分分數，並加回到sorted_data中
-            for news in result['news_list']:
-                if current_user_id:
-                    # 從資料庫查詢用戶之前對該新聞的評分
-                    have, score = news_score_loader(current_user_id, news['_id'])
-                    if have == 'Y':
-                        # 如果用戶之前有評分，將評分分數加回到sorted_data中
-                        news['rating'] = score
-                    else:
-                        # 如果用戶之前沒有評分，設置評分為0
-                        news['rating'] = 0
-                else:
-                    # 如果用戶未登入，設置評分為0
-                    news['rating'] = 0
-            return render_template('newest.html', news_list=result['news_list'],user=g.user)
-        else:
-            result = collection.find_one({'topic':'運動','date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
-            return render_template('newest.html', news_list=result['news_list'],user=g.user)
-    elif request.method == 'POST':
-        if g.user.is_authenticated:
-            data = request.json
-            action = data.get('action')
-            if action =='rating':
-                do_rating(request)
-                return jsonify({'message':"評分成功"})
-            elif action =='view':
-                record_view(request)
-                return jsonify({'message':"觀看成功"})
+    return redirect(url_for('recommendation'))
 
 
 @app.route("/hot", methods=['GET', 'POST'])
@@ -711,8 +702,8 @@ def recommendation():
             cursor.execute(query,g.user.user_id)
             result = cursor.fetchone()
             keyword_dict = json.loads(result['keyword_list']) # 使用者的關鍵字字典
-            # 取前10個 keyword display 在網頁上
-            N = 10 # 要取的關鍵字數目 
+            # 取前5個 keyword display 在網頁上
+            N = 3 # 要取的關鍵字數目 
             top_ten_keywords = nlargest(N,keyword_dict,key=keyword_dict.get) # 型態為list
             print(top_ten_keywords)
             # 根據這10個關鍵字去mongodb撈新聞
