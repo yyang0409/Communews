@@ -54,6 +54,7 @@ function getRating() {
 
 function sendRatingToBackend(path,news_id, newsTopic, rating,keyword_weight) {
   // 使用Fetch API发送评分数据和新聞主題到后端
+  var responseClone; // 1
   fetch(path, {
     method: 'POST',
     headers: {
@@ -61,14 +62,17 @@ function sendRatingToBackend(path,news_id, newsTopic, rating,keyword_weight) {
     },
     body: JSON.stringify({ action: 'rating', news_id: news_id, topic: newsTopic, rating: rating, keyword_weight:keyword_weight}) // 將新聞ID、新聞主題和評分數據轉換為JSON數據傳遞
   })
-    .then(response => response.json())
-    .then(data => {
-      // 这里可以处理后端返回的响应数据（如果有的话）
-      console.log(data);
-    })
-    .catch(error => {
-      console.error('Error:', error);
-    });
+  .then(function(response){
+    responseClone = response.clone(); // 2
+    response.json();
+  })
+  .then(data => {
+    // 这里可以处理后端返回的响应数据（如果有的话）
+    console.log(data);
+  })
+  .catch(error => {
+    console.error('Error:', error);
+  });
 }
 
 function printRatingResult(result,num){
