@@ -364,7 +364,42 @@ def register():
 # 建立網站首頁的回應方式
 @app.route("/", methods=['GET','POST'])
 def index():
-    return redirect(url_for('recommendation'))
+    db=myclient['Kmeans新聞']
+    collection=db['最新']
+    if request.method == 'GET':
+        if g.user.is_authenticated:
+            result = collection.find_one({'topic':'綜合全部','date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            #print(result)
+            # 取得當前用戶ID
+            current_user_id = g.user.user_id if g.user.is_authenticated else None
+            # 逐一查詢每筆新聞的評分分數，並加回到sorted_data中
+            for news in result['news_list']:
+                if current_user_id:
+                    # 從資料庫查詢用戶之前對該新聞的評分
+                    have, score = news_score_loader(current_user_id, news['_id'])
+                    if have == 'Y':
+                        # 如果用戶之前有評分，將評分分數加回到sorted_data中
+                        news['rating'] = score
+                    else:
+                        # 如果用戶之前沒有評分，設置評分為0
+                        news['rating'] = 0
+                else:
+                    # 如果用戶未登入，設置評分為0
+                    news['rating'] = 0
+            return render_template('newest.html', news_list=result['news_list'],user=g.user)
+        else:
+            result = collection.find_one({'topic':'運動','date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            return render_template('newest.html', news_list=result['news_list'],user=g.user)
+    elif request.method == 'POST':
+        if g.user.is_authenticated:
+            data = request.json
+            action = data.get('action')
+            if action =='rating':
+                do_rating(request)
+                return jsonify({'message':"評分成功"})
+            elif action =='view':
+                record_view(request)
+                return jsonify({'message':"觀看成功"})
 
 
 @app.route("/hot", methods=['GET', 'POST'])
