@@ -166,7 +166,7 @@
                   </div>
                   
                   <!-- user 已登入 -->
-                  <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ stars_count_dict[news._id] }}" data-path="/recommendation">
+                  <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ stars_count_dict[news._id] }}" data-keyword="{{news.keyword_weight}}" data-path="/recommendation">
                     <p class="star" name="{{news._id}}">&#9734;</p>
                     <p class="star" name="{{news._id}}">&#9734;</p>
                     <p class="star" name="{{news._id}}">&#9734;</p>
