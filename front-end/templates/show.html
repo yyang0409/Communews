@@ -1,4 +1,4 @@
-5<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -260,7 +260,7 @@
             <div class="card h-100 pb-2" style="width: 675px;">
               <div class="row g-0">
                 <div class="h-75 col col-md-4 pb-1 d-flex align-items-center justify-content-center rounded-start">
-                  <a href="{{ news.url }}">
+                  <a href="{{ news.url }}" target="_blank" class="news_link" data-id="{{news._id}}" data-path="/show" data-keyword="{{news.keyword_weight}}">
                     {% if news.image != "None" %}
                       <img src="{{ news.image }}" class="img-fluid rounded">
                     {% else %}
@@ -271,10 +271,10 @@
                 <!-- card 內容 -->
                 <div class="col-md-8 col-sm-12 h-75 rounded-bottom" style="background-color: #C2C8C6;">
                   <div class="card-body">
-                    <a class="card-title" href="{{ news.url }}">{{ news.title }}</a>
+                    <a class="card-title news_link" href="{{ news.url }}" target="_blank" data-id="{{news._id}}" data-path="/show" data-keyword="{{news.keyword_weight}}">{{ news.title }}</a>
                     <p class="card-text mt-2">
                       {% if news.summary|length > 100 %}
-                        {{ news.summary[:100] }}...<a href="{{ news.url }}">查看完整內容</a>
+                        {{ news.summary[:100] }}...<a href="{{ news.url }}" target="_blank" class="news_link" data-id="{{news._id}}" data-path="/show" data-keyword="{{news.keyword_weight}}">查看完整內容</a>
                       {% else %}
                         {{ news.summary }}
                       {% endif %}
@@ -284,7 +284,7 @@
                 
                 {% if user.is_authenticated %}
                 <!-- 評分 -->
-                <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ stars_count_dict[news._id] }}"  data-path="/show">
+                <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ stars_count_dict[news._id] }}" data-keyword="{{news.keyword_weight}}" data-path="/show">
                   <p class="star" name="{{news._id}}">&#9734;</p>
                   <p class="star" name="{{news._id}}">&#9734;</p>
                   <p class="star" name="{{news._id}}">&#9734;</p>
@@ -361,7 +361,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     <script src="{{url_for('static',filename='js/index.js')}}" defer></script>
-    <script src="{{url_for('static',filename='js/record_view.js')}}" defer></script>
+    <script src="{{url_for('static',filename='js/record_views.js')}}" defer></script>
 </body>
 
 </html>

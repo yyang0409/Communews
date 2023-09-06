@@ -25,7 +25,7 @@ def get_all_ptt_by_topic(topic,news_datetime,connection):
 
 def filter_related_ptt_by_keywords(df_ptt, news_keywords):
     similar_ptt_list = []
-    df_ptt['combined_text'] = df_ptt['title'] + " " + df_ptt['content']
+    df_ptt['combined_text'] = df_ptt['title'] #+ " " + df_ptt['content']
     selected_titles = set()  # 用於儲存已選擇的標題
     
     for idx, row in df_ptt.iterrows():
@@ -50,21 +50,23 @@ def filter_related_ptt_by_keywords(df_ptt, news_keywords):
 
 
 def choose_ptt_data(news_type,news_list):
-    host = 'communews.ctqdwhl8sobn.us-east-1.rds.amazonaws.com'
-    user = 'mysqluser'
-    password = 'mysqluser'
-    #host = '127.0.0.1'
-    #user = 'root'
-    #password = '109403502'
+    #host = 'communews.ctqdwhl8sobn.us-east-1.rds.amazonaws.com'
+    #user = 'mysqluser'
+    #password = 'mysqluser'
+    host = '127.0.0.1'
+    user = 'root'
+    password = 'Jeter#622019'
     database = 'communews'
-    charset =  "utf8"
+    charset =  "utf8mb4"
         
     connection = mysql.connector.connect(host=host, user=user, password=password, database=database, charset=charset)
     for yahoo_news in news_list:
         print("目前執行新聞:",yahoo_news['title'])
         news_keywords = yahoo_news['new_keyword'].split(' ')
+        # 只取標題關鍵字
+        top_three_keywords = news_keywords[:3]
         df_ptt = get_all_ptt_by_topic(yahoo_news['topic'], yahoo_news['timestamp'],connection)
-        filter_ptt_list = filter_related_ptt_by_keywords(df_ptt, news_keywords)
+        filter_ptt_list = filter_related_ptt_by_keywords(df_ptt, top_three_keywords)
         
         i = 1
         for ptt in filter_ptt_list:

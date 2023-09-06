@@ -206,22 +206,28 @@ def record_view(request):
 def keyword_compare(user_id,json_news_keyword,mutiple_rate):
     mysql_db = connect_db()
     cursor = mysql_db.cursor()
-    query = "SELECT * FROM tb_user_keyword_weight WHERE id_user = %s"
+    query = "SELECT * FROM tb_user_keyword_weight WHERE id_user = %s" # 抓取使用者的關鍵字字典
     cursor.execute(query,(user_id))
     result = cursor.fetchone()
-    user_keyword_weight = json.loads(result['keyword_list']) # user 看過新聞的所有關鍵字 型態為dictionary
-    user_keyword_weight = calculate_keyword_weight(user_keyword_weight,json_news_keyword,mutiple_rate)
-    json_user_keyword_weight = json.dumps(user_keyword_weight)
-    # 更新使用者關鍵字字典
-    query = "UPDATE tb_user_keyword_weight SET keyword_list = %s WHERE id_user = %s"
-    cursor.execute(query,(json_user_keyword_weight,user_id))
-    mysql_db.commit()
+    print(result)
+    if result['keyword_list'] is None:
+        query = "UPDATE tb_user_keyword_weight SET keyword_list = %s WHERE id_user = %s"
+        cursor.execute(query,(json_news_keyword,user_id))
+        mysql_db.commit()
+    else:    
+        user_keyword_weight = json.loads(result['keyword_list']) # user 看過新聞的所有關鍵字 型態為dictionary
+        user_keyword_weight = calculate_keyword_weight(user_keyword_weight,json_news_keyword,mutiple_rate)
+        json_user_keyword_weight = json.dumps(user_keyword_weight)
+        # 更新使用者關鍵字字典
+        query = "UPDATE tb_user_keyword_weight SET keyword_list = %s WHERE id_user = %s"
+        cursor.execute(query,(json_user_keyword_weight,user_id))
+        mysql_db.commit()
     
         
 def calculate_keyword_weight(user_keyword_weight,json_news_keyword,mutiple_rate):
     news_keyword_weight = json.loads(json_news_keyword) # dict type
 
-    user_keywords = list(user_keyword_weight.keys()) # 使用者關鍵字list (沒有權重)
+    user_keywords = list(user_keyword_weight.keys()) # 使用者關鍵字list (沒有權重
     news_keywords = list(news_keyword_weight.keys()) # 新聞關鍵字list (沒有權重)
 
     common_keywords = set(user_keywords) & set(news_keywords) # 使用者有看過且該新聞也有的關鍵字
@@ -343,17 +349,19 @@ def register():
         password_hash = generate_password_hash(input_password)
 
         # 执行插入操作
-        query = "INSERT INTO tb_user (email, password) VALUES (%s, %s)"
+        query = "INSERT INTO tb_user (email, password) VALUES (%s, %s);"
         cursor.execute(query, (input_email, password_hash))
         db.commit()
 
         # 創建user的keyword_weight_list
         # 先抓id_user
-        query = "SELECT LAST_INSERT_ID()"
+        query = "SELECT LAST_INSERT_ID(id_user) from tb_user order by LAST_INSERT_ID(id_user) desc limit 1;"
         cursor.execute(query)
-        id_user = cursor.fetchone()
-        query = "INSERT INTO tb_user_keyword_weight (id_user,keyword_list) VALUES (%s,%s)"
-        cursor.execute(query,(id_user,'NULL'))
+        result = cursor.fetchone()
+        id_user = result['LAST_INSERT_ID(id_user)']
+        query = "INSERT INTO tb_user_keyword_weight (id_user) VALUES (%s);"
+        cursor.execute(query,(id_user))
+        db.commit()
 
         flash("Thank you for registering.")
         return redirect(url_for('login'))
@@ -441,7 +449,7 @@ def hot():
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
             elif action == 'view':
-                record_view(request,'當日熱門')
+                record_view(request)
                 return jsonify({'message': '觀看成功'})
     else:
         # 在其他情況下也要處理返回有效的回應
@@ -534,7 +542,7 @@ def everymonth():
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
             elif action == 'view':
-                record_view(request,'當月熱門')
+                record_view(request)
                 return jsonify({'message': '觀看成功'})
     else:
         # 在其他情況下也要處理返回有效的回應
@@ -578,7 +586,7 @@ def topic(topicname):
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
             elif action == 'view':
-                record_view(request,'最新')
+                record_view(request)
                 return jsonify({'message': '觀看成功'})
  
 
@@ -622,7 +630,7 @@ def topicHot(topicname):
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
             elif action == 'view':
-                record_view(request,'當日熱門')
+                record_view(request)
                 return jsonify({'message': '觀看成功'})
 
     else:
@@ -668,7 +676,7 @@ def topic_hot_week(topicname):
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
             elif action == 'view':
-                record_view(request,'當週熱門')
+                record_view(request)
                 return jsonify({'message': '觀看成功'})
 
     else:
@@ -714,7 +722,7 @@ def topic_hot_month(topicname):
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
             elif action == 'view':
-                record_view(request,'當月熱門')
+                record_view(request)
                 return jsonify({'message': '觀看成功'})
 
     else:
@@ -817,6 +825,9 @@ def collection(keyword):
             elif action =='rating':
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
+            elif action == 'view':
+                record_view(request)
+                return jsonify({'message':"觀看成功"})
  
 @app.route("/show",  methods=['POST'])
 def show():
@@ -837,24 +848,24 @@ def show():
                     return jsonify({'message': "評分成功"})
                 elif action == 'view':
                     record_view(request)
-                    return jsonify({'message': "觀看成功"})
+                    return jsonify({'message':"觀看成功"})
             else:
                 combined_data = {}
                 keyword = request.form.get("keyword", "")
                 data, all_data = gen_kw_search_news(keyword)
                 combined_data.update(data)
                 # 初始化 extend_keywords 为空集合
-                extend_keywords = set()
+                extend_keywords = []
                 for keyword, news_list in data.items():
                     # 调用 word2vec() 函数获取与关键字相似的单词列表
                     similar_words = word2vec(keyword)
                     if isinstance(similar_words, list) and similar_words != "None":
                         for word in similar_words:
                             if word not in extend_keywords:
-                                extend_keywords.add(word)
+                                extend_keywords.append(word)
 
                 # 将 extend_keywords 集合转换为列表
-                extend_keywords = list(extend_keywords)
+                #extend_keywords = list(extend_keywords)
                 print("extend_keywords:",extend_keywords)
                 if extend_keywords != "None":
                     for extend_keyword in extend_keywords:
@@ -865,7 +876,7 @@ def show():
                 # 計算每個新聞的星星數量
                 stars_count_dict = {}
                 for keyword, news_list in combined_data.items():
-                    choose_ptt_data("",news_list)
+                    news_list=choose_ptt_data("",news_list)
                     for news_dict in news_list:
                         news_id = news_dict.get('_id')
                         # 將 ObjectId 轉換成字符串形式
@@ -882,12 +893,25 @@ def show():
             keyword = request.form.get("keyword", "")
             data,all_data =gen_kw_search_news(keyword)
             combined_data.update(data)
-            extend_keywords=word2vec(keyword)
+            # 初始化 extend_keywords 为空集合
+            extend_keywords = []
+            for keyword, news_list in data.items():
+                # 调用 word2vec() 函数获取与关键字相似的单词列表
+                similar_words = word2vec(keyword)
+                if isinstance(similar_words, list) and similar_words != "None":
+                    for word in similar_words:
+                        if word not in extend_keywords:
+                            extend_keywords.append(word)
+            # 将 extend_keywords 集合转换为列表
+            #extend_keywords = list(extend_keywords)
+            print("extend_keywords:",extend_keywords)
+
             if extend_keywords!="None":
                 for extend_keyword in extend_keywords:
                     extend_data,all_extend_data_news=gen_kw_search_news(extend_keyword)
                     combined_data.update(extend_data)
-                    
+            for keyword, news_list in combined_data.items():
+                news_list=choose_ptt_data("",news_list)
             return render_template('show.html',combined_data=combined_data, user=g.user,like_status_dict=like_status_dict,stars_count_dict=stars_count_dict)
     return redirect(url_for('index'))   
 
@@ -926,6 +950,7 @@ def hashtag(type,keyword,topicname):
                 like_status_dict = {keyword: collection_loader(keyword)[0]}
                 # 計算每個新聞的星星數量
                 for keyword, news_list in all_data.items():
+                    news_list=choose_ptt_data("",news_list)
                     for news_dict in news_list:
                         news_id = news_dict.get('_id')
                         # 將 ObjectId 轉換成字符串形式
@@ -946,6 +971,8 @@ def hashtag(type,keyword,topicname):
                 return render_template('hashtag.html',type=type,topicname=topicname,keyword=result['keyword'],news_list=result['news_list'],like_status_dict=like_status_dict,stars_count_dict=stars_count_dict,user=g.user)
             else:
                 data,all_data =gen_kw_search_news(keyword)
+                for keyword, news_list in all_data.items():
+                    news_list=choose_ptt_data("",news_list)
                 return render_template('hashtag.html',type=type,topicname=topicname,keyword=keyword,news_list=all_data.get(keyword),user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
@@ -958,6 +985,9 @@ def hashtag(type,keyword,topicname):
             elif action =='rating':
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
+            elif action == 'view':
+                record_view(request)
+                return jsonify({'message':"觀看成功"})
 @app.route("/logout")
 @login_required
 def logout():
