@@ -131,6 +131,7 @@ def hot_kw(topic):
 def do_newest_kmeans(topic):
     current_date =(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")
     if topic == '綜合全部':
+        total_newest_news_list=get_DB_News_all_data()
         # 使用sorted函數來按時間戳記排序列表
         sorted_list = sorted(total_newest_news_list, key=lambda x: x['timestamp'], reverse=True)
         # 只保留最新的200筆資料
@@ -141,7 +142,7 @@ def do_newest_kmeans(topic):
         save_to_kmeans_db('Kmeans新聞','最新',newest_kmeans_news_dataframe(topic,matched_ptt_news_list,current_date))
     else:
         topic_newest_news_list=get_DB_News_data(topic)
-        total_newest_news_list.extend(topic_newest_news_list)
+        #total_newest_news_list.extend(topic_newest_news_list)
         after_topic_newest_news_list=newest_news_search(topic_newest_news_list)
         matched_ptt_news_list=choose_ptt_data('最新',after_topic_newest_news_list)
         save_to_kmeans_db('Kmeans新聞','最新',newest_kmeans_news_dataframe(topic,matched_ptt_news_list,current_date))
@@ -272,26 +273,33 @@ if __name__ == '__main__':
     for topic in topics:
         hot_kw(topic)
 
-    print("爬完新聞的時間:",datetime.now())
+    news_finished_time=datetime.now()
+    print("爬完新聞的時間:",news_finished_time)
 
     #爬PTT
-    #update_ptt_data()
-
+    update_ptt_data()
+    
+    PTT_finished_time=datetime.now()
+    print("爬完PTT的時間:",PTT_finished_time)
     #將mysql雲端複製到本地端
-    #copy()
+    copy()
 
     #做Kmeans + PTT 比對
-    total_newest_news_list = []
-    #topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經","綜合全部"] # 順序不能換
+    #total_newest_news_list = []
+    topics=["運動","生活","國際","娛樂","社會地方","科技","健康","財經","綜合全部"] # 順序不能換
     #熱門系列
-    #for topic in topics:
-        #for option in ['daily','weekly','monthly']:
-            #print("熱門:",topic,option)
-            #do_hot_kmeans(topic,option)
+    for topic in topics:
+        for option in ['daily','weekly','monthly']:
+            print("熱門:",topic,option)
+            do_hot_kmeans(topic,option)
         #最新系列
-        #print("最新:",topic)
-        #do_newest_kmeans(topic)
+        print("最新:",topic)
+        do_newest_kmeans(topic)
+        
+    #print("爬完新聞的時間:",news_finished_time)
+    #print("爬完PTT的時間:",PTT_finished_time)
 
+    
         
 
     

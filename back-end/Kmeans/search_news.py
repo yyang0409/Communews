@@ -82,7 +82,11 @@ def hot_all_search_news(option):
 
         df_keyword_news_data = convert_to_dataframe(keyword_news_data)
         print(len(df_keyword_news_data))
-        result = hot_run_kmeans_from_df(df_keyword_news_data,int(len(df_keyword_news_data)/10))
+        if int(len(df_keyword_news_data)/5) == 0 :
+            result = hot_run_kmeans_from_df(df_keyword_news_data, 1)
+        else:
+            result = hot_run_kmeans_from_df(df_keyword_news_data, int(len(df_keyword_news_data) / 5))
+
         # 按照相似度和時間戳排序
         
         result.sort(key=lambda x: (x['similarity'], x['timestamp']), reverse=True)
