@@ -164,5 +164,105 @@ def gen_kw_search_news(usr_input):
     return four_selected_news,all_selected_news
 
 
+def recommend_news(top_ten_keywords):
+    all_selected_news = {}  # 以關鍵字為鍵的存儲最相似的新聞字典
+    four_selected_news={}
+
+    for keyword in top_ten_keywords:
+        # 進行聚合查詢，使用一個關鍵字來查詢新聞
+        pipeline = [
+            {
+                '$match': {
+                    'title': {'$regex': f'.*{keyword}.*', '$options': 'i'}
+                }
+            },
+            {"$sort": {"timestamp": -1}},
+            {"$limit": 200},
+            {
+                '$project': {
+                    'document': '$$ROOT',  # 將整個文檔添加到document欄位中
+                    'combined_text': {'$concat': ['$title', ' ', '$summary']},  # 新增combined_text字段
+                    'timestamp': '$timestamp'  # 保存時間戳
+                }
+            },
+            {
+                '$match': {
+                    'combined_text': {'$exists': True}
+                }
+            }
+        ]
+
+        # 建立一個空的列表來保存查詢結果
+        keyword_news_data = []
+
+        for collection_name in total_subject:
+                news_data = list(db[collection_name].aggregate(pipeline))
+                keyword_news_data.extend(news_data)  # 把查詢結果加入列表
+                news_data_2 = list(db_2[collection_name].aggregate(pipeline))
+                keyword_news_data.extend(news_data_2)  # 把查詢結果加入列表
+
+        if len(keyword_news_data) < 20:
+            print("不夠")
+            pipeline = [
+            {
+                '$match': {
+                    '$or': [
+                        {'title': {'$regex': f'.*{keyword}.*', '$options': 'i'}},
+                        {'summary': {'$regex': f'.*{keyword}.*', '$options': 'i'}}
+                    ]
+                }   
+            },
+            {"$sort": {"timestamp": -1}},
+            {"$limit": 200},
+            {
+                '$project': {
+                    'document': '$$ROOT',  # 將整個文檔添加到document欄位中
+                    'combined_text': {'$concat': ['$title', ' ', '$summary']},  # 新增combined_text字段
+                    'timestamp': '$timestamp'  # 保存時間戳
+                }
+            },
+            {
+                '$match': {
+                    'combined_text': {'$exists': True}
+                }
+            }
+        ]        
+        # 建立一個空的列表來保存查詢結果
+        keyword_news_data = []
+
+        for collection_name in total_subject:
+                news_data = list(db[collection_name].aggregate(pipeline))
+                keyword_news_data.extend(news_data)  # 把查詢結果加入列表
+                news_data_2 = list(db_2[collection_name].aggregate(pipeline))
+                keyword_news_data.extend(news_data_2)  # 把查詢結果加入列表
+                
+        # 提取新聞標題和摘要文本
+        news_text = [news['combined_text'] for news in keyword_news_data]
+
+        # 計算TF-IDF相似性分數
+        similarity_scores = calculate_tfidf(news_text, keyword)
+
+        
+        # 把相似性分數加回每個新聞的資料中
+        for i, news in enumerate(keyword_news_data):
+            news['document']['similarity'] = similarity_scores[i]
+
+        df_keyword_news_data = convert_to_dataframe(keyword_news_data)
+        
+        result = hot_run_kmeans_from_df(df_keyword_news_data,int(len(df_keyword_news_data)/2))
+
+        # 按照相似度和時間戳排序
+        
+        result.sort(key=lambda x: (x['similarity'], x['timestamp']), reverse=True)
+
+          
+        if keyword_news_data:
+            four_selected_news[keyword] = [news for news in result[:4]]
+            all_selected_news[keyword] = [news for news in result]
+            
+    
+    return four_selected_news,all_selected_news
+
+
 #print(kw_search_news("執行長"))
 

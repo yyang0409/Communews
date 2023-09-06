@@ -36,13 +36,13 @@
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>   
-  
+        <!-- search bar -->
         <div class="d-flex justify-content-end collapse navbar-collapse navigation" id="navbarSupportedContent">
           <form class="search-block d-flex m-auto" role="search" action="{{ url_for('show') }}" method="POST">
             <input class="form-control me-2" type="search" name="keyword" placeholder="搜尋" aria-label="Search">
             <button class="btn btn-outline-success btnSearch" type="submit">搜尋</button>
           </form>
-         
+          <!-- search bar -->
           <ul class="navbar-nav">
             <li class="nav-item">
               <a class="nav-link nav-home" aria-current="page" href="/">首頁</a>
@@ -51,7 +51,7 @@
               <a class="nav-link nav-login" href="/logout" role="button">登出
               </a>
             </li>
-          </ul>          
+          </ul>       
         </div>
       </div>      
     </nav>
@@ -69,7 +69,7 @@
         <a class="nav-link active" aria-current="page"href="/recommendation">推薦</a>
       </li>
       <li class="nav-item mx-1">
-        <a class="nav-link " aria-current="page" href="/collection">收藏</a>
+        <a class="nav-link "  href="/collection">收藏</a>
       </li>
       <li class="nav-item mx-1">
         <p class="line"></p>
@@ -109,98 +109,97 @@
       <div class="col-2">
         <div id="list-example" class="list-group">
           <br>
-          <a class="list-group-item top10">熱門關鍵字TOP10</a>
+          <a class="list-group-item top10">推薦關鍵字TOP10</a>
           <!-- 共要有10個關鍵字 -->
+          {% for keyword in top_ten_keywords %}
           <a class="list-group-item list-group-item-action" href="#{{keyword}}">{{keyword}}</a>
-          <a class="list-group-item list-group-item-action" href="#list-item-2">Item 2</a>
-          <a class="list-group-item list-group-item-action" href="#list-item-3">Item 3</a>
+          {% endfor %}
         </div>
       </div>
     
-    <div class="container mt-2 col-10">
-      <!-- 推薦新聞 -->
-      
+    <div class="col-10">
+      <!-- 推薦新聞 -->   
+    {% for  keyword, news_list in combined_data.items() %} 
       
       <div class="container news-container" id="{{keyword}}">
         
         <div class="row">
-          <p class="topic fs-2 mt-2"># 為您推薦</p> 
+
           <!-- Keyword -->
           <div style="width: 100%;height: fit-content;">              
               <!-- 有登入的收藏 -->
-              <div class="like like-no" data-id="{{keyword}}" data-path="/hot" style="display:inline-block;" ></div> 
+              <div class="like {% if like_status_dict[keyword] == 'Y' %}like-yes{% else %}like-no{% endif %}" data-id="{keyword}}" data-path="/recommendation" style="display:inline-block;" ></div> 
               <div style="display:inline-block;">
-                <a class="nav-link" href="">
+                <a class="nav-link" href="{{ url_for('hashtag', keyword=keyword,type='最新',topicname='綜合全部') }}">
                   <span class="topic fs-3 ms-3"># {{ keyword }}</span>
                 </a> 
               </div>  
           </div>
-          
-          
+               
           <!-- News for the keyword -->
-          
+          {% for news in news_list %}
           <div class="col-6 mb-2 d-flex align-items-center justify-content-center">
             <!-- Card section -->
             <div class="card h-100 pb-2" style="width: 675px;">
               <div class="row g-0">
                 <div class="h-75 col col-md-4 pb-1 d-flex align-items-center justify-content-center rounded-start">
-                  <a href="{{ url }}">
-                    
-                      <img src="{{ image }}" class="img-fluid rounded">
-                      <!-- 新聞沒照片時的default -->
-                      <!-- <img src="{{url_for('static',filename='img/44300_nobg.png')}}" class="img-fluid rounded" style="object-fit: cover;"> -->
-                    
+                  <a href="{{ news.url }}" target="_blank" class="news_link" data-id="{{news._id}}" data-path="/recommendation" data-keyword="{{news.keyword_weight}}">
+                    {% if news.image !="None" %}
+                      <img src="{{ news.image }}" class="img-fluid rounded">
+                    {% else %}
+                      <img src="{{url_for('static',filename='img/44300_nobg.png')}}" class="img-fluid rounded" style="object-fit: cover;">   
+                    {% endif %}                
                   </a>         
                 </div>
                 <!-- card 內容 -->
                 <div class="col-md-8 col-sm-12 h-75 rounded-bottom" style="background-color: #C2C8C6;">
                   <div class="card-body">
-                    <a class="card-title" href="{{url}}" >{{title}}</a>
+                    <a class="card-title news_link"  data-id="{{news._id}}" data-keyword="{{news.keyword_weight}}" data-path="/recommendation" href="{{news.url}}" target="_blank">{{news.title}}</a>
                     <p class="card-text mt-2">
-                      
-                        <a href="{{url}}">查看完整內容</a>
-                      
-
-                    </p>
-                    <a href="{{ptt_url}}" class="card-link" target="_blank">{{ptt_title}}</a>
+                      {% if news.summary|length > 100 %}
+                        {{ news.summary[:100] }}...<a class="news_link" data-id="{{news._id}}" data-keyword="{{news.keyword_weight}}" data-path="/recommendation" href="{{news.url}}" target="_blank">查看完整內容</a>
+                      {% else %}
+                        {{ news.summary }}
+                      {% endif %}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                
-                <!-- user 已登入 -->
-                <form class="rating" data-id="{{_id}}" data-topic="{{ topic }} "data-score="{{ _id }}" data-path="/hot">
-                  <p class="star" name="{{_id}}">&#9734;</p>
-                  <p class="star" name="{{_id}}">&#9734;</p>
-                  <p class="star" name="{{_id}}">&#9734;</p>
-                  <p class="star" name="{{_id}}">&#9734;</p>
-                  <p class="star" name="{{_id}}">&#9734;</p>
-                  <span class="stars-score" id="{{_id}}"></span>
-                </form> 
-                
-                <div class="col-6 ptt-link">
-                  <a href="{{ptt_url}}">PTT-post</a>
-                  <a href="{{ptt_url}}">PTT-post</a>
-                  <a href="{{ptt_url}}">PTT-post</a>
-                </div>
-              </div>
-              
-              <!--end of card row-->
-            </div> 
-              <!-- end of card section -->
-          </div>
-            <!-- end of column -->
-    
-        
-        </div> 
-        <!-- end of row -->
+                  
+                  <!-- user 已登入 -->
+                  <form class="rating" data-id="{{news._id}}" data-topic="{{ news.topic }} "data-score="{{ stars_count_dict[news._id] }}" data-keyword="{{news.keyword_weight}}" data-path="/recommendation">
+                    <p class="star" name="{{news._id}}">&#9734;</p>
+                    <p class="star" name="{{news._id}}">&#9734;</p>
+                    <p class="star" name="{{news._id}}">&#9734;</p>
+                    <p class="star" name="{{news._id}}">&#9734;</p>
+                    <p class="star" name="{{news._id}}">&#9734;</p>
+                    <span class="stars-score" id="{{news._id}}"></span>
+                  </form> 
+                  
+                  <div class="col-6 ptt-link">
+                    <a href="{{news.ptt_url}}">{{news.ptt_title_1}}</a>
+                    <a href="{{news.ptt_url}}">{{news.ptt_title_2}}</a>
+                    <a href="{{news.ptt_url}}">{{news.ptt_title_3}}</a>
+                  </div>
+                </div>                
+                <!--end of card row-->
+              </div> 
+                <!-- end of card section -->
+            </div>
+            <!-- end of column -->  
+            {% endfor %}   
+          </div> 
+          <!-- end of row -->
+        </div>
+        <!-- end of container -->  
+        {% endfor %}
       </div>
-
-      <!-- end of container -->  
     </div>
-  </div>
     
   <!-- Bootstrap js -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
   <script src="{{url_for('static',filename='js/index.js')}}" defer></script>
+  <script src="{{url_for('static',filename='js/record_views.js')}}" defer></script>
+
 </body>
 
 </html>

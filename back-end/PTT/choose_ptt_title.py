@@ -33,7 +33,7 @@ def filter_related_ptt_by_keywords(df_ptt, news_keywords):
         content = row['combined_text']
         match_score = sum(keyword in content for keyword in news_keywords)
         
-        if match_score > 1 and title not in selected_titles:
+        if match_score >= 1 and title not in selected_titles:
             similar_ptt_list.append({
                 'title': title,
                 'url': row['link'],

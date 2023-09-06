@@ -15,6 +15,11 @@ from search_news import *
 from word2vec import *
 from choose_ptt_title import *
 
+import numpy as np
+from heapq import nlargest
+import ast
+
+
 myclient = pymongo.MongoClient("mongodb+srv://user2:user2@cluster0.zgtguxv.mongodb.net/?retryWrites=true&w=majority")
 # 建立資料庫連接
 def connect_db():
@@ -117,13 +122,17 @@ def do_like(request):
         db.commit()
         
 def do_rating(request):
+    record_view(request)
+
     db = connect_db()
     cursor = db.cursor()
     data = request.json
     news_id = data.get('news_id')
     news_topic = data.get('topic')
     rating = data.get('rating')
+    # news_keyword_weight = data.get('keyword')
     have,score=news_score_loader(current_user.user_id,news_id)
+    # news_keyword_weight = caculate_rating_weight(news_keyword_weight)
     #如果存在 就改分數
     if have =='Y':
         sql_insert = "UPDATE tb_news_score SET score=%s WHERE id_user =%s AND id_news=%s "
@@ -135,9 +144,106 @@ def do_rating(request):
     elif have=='N':
         sql_insert = "INSERT INTO tb_news_score (id_user,id_news,news_topic,score) VALUES (%s,%s,%s,%s)"
         data = (current_user.user_id,news_id,news_topic,rating)
-        cursor.execute(sql_insert, data)
+        cursor.execute(sql_insert, data)       
         # 提交變更
         db.commit()
+
+def caculate_rating_weight(rating,news_keyword_weight):
+    # 將新聞關鍵字的權重都乘上評分的值
+    for key in news_keyword_weight:
+        news_keyword_weight[key] = news_keyword_weight[key] * rating
+
+    return news_keyword_weight
+
+def record_view(request):
+    mysql_db = connect_db()
+    cursor = mysql_db.cursor()
+    data = request.json
+    action = data.get('action') # 執行的動作
+    news_id = data.get('news_id') # 正在觀看的新聞id
+    news_keyword  = data.get('keyword_weight') # 新聞關鍵字 & 權重
+    mutiple_rate = 1.0
+
+    print(action)
+
+    if action == 'rating':
+        rating = str(data.get('rating'))
+        match rating:
+            case "1": # 權重乘 0.5
+                mutiple_rate = 0.5
+            case "2": # 權重乘 0.8
+                mutiple_rate = 0.8
+            case "3": # 權重乘 1
+                mutiple_rate = 1.0
+            case "4": # 權重乘 1.1
+                mutiple_rate = 1.1
+            case "5": # 權重乘 1.2
+                mutiple_rate = 1.2
+    elif action == 'view':
+        mutiple_rate = 1.0
+
+    print(type(rating))
+    print(mutiple_rate)
+    if news_keyword == "nan": # 若沒有關鍵字 & 權重，直接存nan
+        json_news_keyword = json.dumps(news_keyword)
+        query = "INSERT INTO tb_news_view (id_user,id_news,news_keyword,date) VALUES (%s,%s,%s,%s)"
+        insert_data = (current_user.user_id,news_id,json_news_keyword,dt.date.today().strftime("%Y-%m-%d"))
+        cursor.execute(query,insert_data)
+        mysql_db.commit()
+    else:
+        dict_news_keyword = eval(news_keyword) # 轉成dict type
+        json_news_keyword = json.dumps(dict_news_keyword) # 轉成 JSON strgin 格式
+        print(dict_news_keyword)
+        print(type(dict_news_keyword))
+        query = "INSERT INTO tb_news_view (id_user,id_news,news_keyword,date) VALUES (%s,%s,%s,%s)"
+        insert_data = (current_user.user_id,news_id,json_news_keyword,dt.date.today().strftime("%Y-%m-%d"))
+        cursor.execute(query,insert_data)
+        mysql_db.commit()
+
+        keyword_compare(current_user.user_id,json_news_keyword,mutiple_rate)
+
+# 比對觀看新聞的關鍵字與該user所有看過新聞的關鍵字有無一樣的關鍵字，若有則將權重相加並記錄到tb_user_keyword_weight
+def keyword_compare(user_id,json_news_keyword,mutiple_rate):
+    mysql_db = connect_db()
+    cursor = mysql_db.cursor()
+    query = "SELECT * FROM tb_user_keyword_weight WHERE id_user = %s"
+    cursor.execute(query,(user_id))
+    result = cursor.fetchone()
+    user_keyword_weight = json.loads(result['keyword_list']) # user 看過新聞的所有關鍵字 型態為dictionary
+    user_keyword_weight = calculate_keyword_weight(user_keyword_weight,json_news_keyword,mutiple_rate)
+    json_user_keyword_weight = json.dumps(user_keyword_weight)
+    # 更新使用者關鍵字字典
+    query = "UPDATE tb_user_keyword_weight SET keyword_list = %s WHERE id_user = %s"
+    cursor.execute(query,(json_user_keyword_weight,user_id))
+    mysql_db.commit()
+    
+        
+def calculate_keyword_weight(user_keyword_weight,json_news_keyword,mutiple_rate):
+    news_keyword_weight = json.loads(json_news_keyword) # dict type
+
+    user_keywords = list(user_keyword_weight.keys()) # 使用者關鍵字list (沒有權重)
+    news_keywords = list(news_keyword_weight.keys()) # 新聞關鍵字list (沒有權重)
+
+    common_keywords = set(user_keywords) & set(news_keywords) # 使用者有看過且該新聞也有的關鍵字
+    keywords_only_in_news = set(news_keywords) - set(user_keywords) # 使用者沒看過的關鍵字
+
+    # 將相同關鍵字的權重相加並更新於使用者關鍵字字典
+    for com_keyword in common_keywords:
+        user_keyword_weight[com_keyword] = user_keyword_weight[com_keyword] + news_keyword_weight[com_keyword] * mutiple_rate
+
+    # 將使用者沒看過得關鍵字新增至使用者關鍵字字典
+    for keyword in keywords_only_in_news:
+        user_keyword_weight[keyword] = news_keyword_weight[keyword] * mutiple_rate
+
+    # 將使用者關鍵字字典排序
+    keys = list(user_keyword_weight.keys())
+    values = list(user_keyword_weight.values())
+
+    sorted_values_index = np.argsort(values) # 根據weight大小排序，存weight的index值
+
+    user_keyword_weight = {keys[index]: values[index] for index in sorted_values_index} # dict type
+
+    return user_keyword_weight
     
 app = Flask( 
     __name__,
@@ -241,6 +347,14 @@ def register():
         cursor.execute(query, (input_email, password_hash))
         db.commit()
 
+        # 創建user的keyword_weight_list
+        # 先抓id_user
+        query = "SELECT LAST_INSERT_ID()"
+        cursor.execute(query)
+        id_user = cursor.fetchone()
+        query = "INSERT INTO tb_user_keyword_weight (id_user,keyword_list) VALUES (%s,%s)"
+        cursor.execute(query,(id_user,'NULL'))
+
         flash("Thank you for registering.")
         return redirect(url_for('login'))
 
@@ -274,7 +388,7 @@ def index():
                     news['rating'] = 0
             return render_template('newest.html', news_list=result['news_list'],user=g.user)
         else:
-            result = collection.find_one({'topic':'綜合全部','date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
+            result = collection.find_one({'topic':'運動','date':(datetime.now()- timedelta(days=1)).strftime("%Y-%m-%d")})
             return render_template('newest.html', news_list=result['news_list'],user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
@@ -282,8 +396,10 @@ def index():
             action = data.get('action')
             if action =='rating':
                 do_rating(request)
-                return jsonify({'message': "評分成功"})
-
+                return jsonify({'message':"評分成功"})
+            elif action =='view':
+                record_view(request)
+                return jsonify({'message':"觀看成功"})
 
 
 @app.route("/hot", methods=['GET', 'POST'])
@@ -324,6 +440,9 @@ def hot():
             elif action == 'rating':
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
+            elif action == 'view':
+                record_view(request,'當日熱門')
+                return jsonify({'message': '觀看成功'})
     else:
         # 在其他情況下也要處理返回有效的回應
         return "Invalid request method"
@@ -366,8 +485,11 @@ def everyweek():
                 # 回傳JSON格式的回應給前端
                 return jsonify({'message': '收藏成功！'})
             elif action =='rating':
-                do_rating(request)
+                do_rating(request)                
                 return jsonify({'message': "評分成功"})
+            elif action == 'view':
+                record_view(request)
+                return jsonify({'message': '觀看成功'})
     else:
         # 在其他情況下也要處理返回有效的回應
         return "Invalid request method"
@@ -411,6 +533,9 @@ def everymonth():
             elif action =='rating':
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
+            elif action == 'view':
+                record_view(request,'當月熱門')
+                return jsonify({'message': '觀看成功'})
     else:
         # 在其他情況下也要處理返回有效的回應
         return "Invalid request method"
@@ -452,6 +577,9 @@ def topic(topicname):
             if action =='rating':
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
+            elif action == 'view':
+                record_view(request,'最新')
+                return jsonify({'message': '觀看成功'})
  
 
 # topic的熱門新聞頁面
@@ -493,6 +621,9 @@ def topicHot(topicname):
             elif action =='rating':
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
+            elif action == 'view':
+                record_view(request,'當日熱門')
+                return jsonify({'message': '觀看成功'})
 
     else:
         # 在其他情況下也要處理返回有效的回應
@@ -536,6 +667,9 @@ def topic_hot_week(topicname):
             elif action =='rating':
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
+            elif action == 'view':
+                record_view(request,'當週熱門')
+                return jsonify({'message': '觀看成功'})
 
     else:
         # 在其他情況下也要處理返回有效的回應
@@ -579,18 +713,71 @@ def topic_hot_month(topicname):
             elif action =='rating':
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
+            elif action == 'view':
+                record_view(request,'當月熱門')
+                return jsonify({'message': '觀看成功'})
 
     else:
         # 在其他情況下也要處理返回有效的回應
         return "Invalid request method"
 
-@app.route("/recommendation")
+@app.route("/recommendation",methods=['GET','POST'])
 @login_required
 def recommendation():
-    return render_template('recommendation.html',user=g.user)
+    mysql_db = connect_db()
+    cursor = mysql_db.cursor()
+
+    stars_count_dict = {}
+    like_status_dict={}
+    combined_data = {}
+    
+    if request.method == 'GET':
+        if g.user.is_authenticated:
+            query = ' SELECT * FROM tb_user_keyword_weight WHERE id_user = %s'
+            cursor.execute(query,g.user.user_id)
+            result = cursor.fetchone()
+            keyword_dict = json.loads(result['keyword_list']) # 使用者的關鍵字字典
+            # 取前5個 keyword display 在網頁上
+            N = 3 # 要取的關鍵字數目 
+            top_ten_keywords = nlargest(N,keyword_dict,key=keyword_dict.get) # 型態為list
+            print(top_ten_keywords)
+            # 根據這10個關鍵字去mongodb撈新聞
+            
+            data,all_data = recommend_news(top_ten_keywords)
+            combined_data.update(data)
+
+            # 判斷有無收藏該關鍵字
+            like_status_dict = {keyword: collection_loader(keyword)[0] for keyword in combined_data.keys()}
+
+            for keyword, news_list in data.items():
+                for news_dict in news_list:                        
+                    news_id = news_dict.get('_id')
+                    # 將 ObjectId 轉換成字符串形式
+                    str_news_id = str(news_id)
+                    have, score = news_score_loader(g.user.user_id, str_news_id)
+                    #print(str_news_id, have, score)
+                    if have == 'Y':
+                        stars_count_dict[news_id] = score
+                    else:
+                        stars_count_dict[news_id] = 0
+                        
+            return render_template('recommendation.html',top_ten_keywords=top_ten_keywords, combined_data=combined_data,stars_count_dict = stars_count_dict,like_status_dict = like_status_dict,user = g.user)
+    elif request.method == 'POST':
+        if g.user.is_authenticated:
+            data = request.json
+            action = data.get('action')
+            if action=='like':
+                do_like(request)
+                # 回傳JSON格式的回應給前端
+                return jsonify({'message': '收藏成功！'})
+            elif action =='rating':
+                do_rating(request)
+                return jsonify({'message': "評分成功"})
+            elif action =='view':
+                record_view(request)
+                return jsonify({'message':"觀看成功"})
 
 
-      
 @app.route("/collection/", defaults={'keyword': None}, methods=['GET','POST'])
 @app.route("/collection/<string:keyword>", methods=['GET','POST'])
 @login_required
@@ -604,7 +791,7 @@ def collection(keyword):
             else:
                 data,all_data=gen_kw_search_news(keyword)
             # 計算每個新聞的星星數量
-            for keyword, news_list in all_data.items():
+            for keyword, news_list in data.items():
                 for news_dict in news_list:
                     news_id = news_dict.get('_id')
                     # 將 ObjectId 轉換成字符串形式
@@ -617,6 +804,7 @@ def collection(keyword):
                     else:
                         stars_count_dict[news_id] = 0
             #print(data)
+            
             return render_template('collection.html',keyword=keyword,collection_kw_nm=collection_kw_nm,all_data=all_data,stars_count_dict=stars_count_dict,user=g.user)
     elif request.method == 'POST':
         if g.user.is_authenticated:
@@ -653,17 +841,17 @@ def show():
                 data, all_data = gen_kw_search_news(keyword)
                 combined_data.update(data)
                 # 初始化 extend_keywords 为空集合
-                extend_keywords = set()
+                extend_keywords = []
                 for keyword, news_list in data.items():
                     # 调用 word2vec() 函数获取与关键字相似的单词列表
                     similar_words = word2vec(keyword)
                     if isinstance(similar_words, list) and similar_words != "None":
                         for word in similar_words:
                             if word not in extend_keywords:
-                                extend_keywords.add(word)
+                                extend_keywords.append(word)
 
                 # 将 extend_keywords 集合转换为列表
-                extend_keywords = list(extend_keywords)
+                #extend_keywords = list(extend_keywords)
                 print("extend_keywords:",extend_keywords)
                 if extend_keywords != "None":
                     for extend_keyword in extend_keywords:
@@ -691,7 +879,19 @@ def show():
             keyword = request.form.get("keyword", "")
             data,all_data =gen_kw_search_news(keyword)
             combined_data.update(data)
-            extend_keywords=word2vec(keyword)
+            # 初始化 extend_keywords 为空集合
+            extend_keywords = []
+            for keyword, news_list in data.items():
+                # 调用 word2vec() 函数获取与关键字相似的单词列表
+                similar_words = word2vec(keyword)
+                if isinstance(similar_words, list) and similar_words != "None":
+                    for word in similar_words:
+                        if word not in extend_keywords:
+                            extend_keywords.append(word)
+            # 将 extend_keywords 集合转换为列表
+            #extend_keywords = list(extend_keywords)
+            print("extend_keywords:",extend_keywords)
+
             if extend_keywords!="None":
                 for extend_keyword in extend_keywords:
                     extend_data,all_extend_data_news=gen_kw_search_news(extend_keyword)
