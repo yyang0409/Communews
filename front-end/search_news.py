@@ -93,10 +93,12 @@ def gen_kw_search_news(usr_input):
         keyword_news_data = []
 
         for collection_name in total_subject:
-                news_data = list(db[collection_name].aggregate(pipeline))
-                keyword_news_data.extend(news_data)  # 把查詢結果加入列表
                 news_data_2 = list(db_2[collection_name].aggregate(pipeline))
                 keyword_news_data.extend(news_data_2)  # 把查詢結果加入列表
+                news_data = list(db[collection_name].aggregate(pipeline))
+                keyword_news_data.extend(news_data)  # 把查詢結果加入列表
+                
+                #print("DB2的資料:",news_data_2)
 
         if len(keyword_news_data) < 20:
             print("不夠")
@@ -128,10 +130,11 @@ def gen_kw_search_news(usr_input):
         keyword_news_data = []
 
         for collection_name in total_subject:
-                news_data = list(db[collection_name].aggregate(pipeline))
-                keyword_news_data.extend(news_data)  # 把查詢結果加入列表
                 news_data_2 = list(db_2[collection_name].aggregate(pipeline))
                 keyword_news_data.extend(news_data_2)  # 把查詢結果加入列表
+                news_data = list(db[collection_name].aggregate(pipeline))
+                keyword_news_data.extend(news_data)  # 把查詢結果加入列表
+                
                 
         # 提取新聞標題和摘要文本
         news_text = [news['combined_text'] for news in keyword_news_data]
@@ -150,7 +153,7 @@ def gen_kw_search_news(usr_input):
 
         # 按照相似度和時間戳排序
         
-        result.sort(key=lambda x: (x['similarity'], x['timestamp']), reverse=True)
+        result.sort(key=lambda x: (x['timestamp'],x['similarity']), reverse=True)
 
           
         if keyword_news_data:

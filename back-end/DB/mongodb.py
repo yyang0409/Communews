@@ -231,6 +231,35 @@ def get_DB_News_data(topic):
 
 #print(get_DB_News_data("運動"))
 
+def get_DB_News_all_data():
+    # 連接到 MongoDB
+    client = MongoClient("mongodb+srv://user1:user1@cluster0.ronm576.mongodb.net/?retryWrites=true&w=majority")
+    db = client['News']
+    # 連接到 MongoDB
+    client_2 = MongoClient("mongodb+srv://userdb2:userdb2@cluster0.whf1ljw.mongodb.net/?retryWrites=true&w=majority")
+    db_2 = client_2['News']
+
+    current_datetime = datetime.now()
+    end_datetime = current_datetime.replace(hour=0, minute=0, second=0, microsecond=0)
+    start_datetime = end_datetime - timedelta(days=1)
+    print(start_datetime)
+    print(end_datetime)
+    pipeline = [
+            {'$match': {'timestamp': {"$gte": start_datetime, "$lte": end_datetime}}},
+            {"$sort": {"timestamp": -1}}
+            #,{"$limit": 10}
+        ]
+    all_data=[]
+    collection_names = db.list_collection_names()
+    for collection_name in collection_names:
+        collection = db[collection_name]
+        collection_2 = db_2[collection_name]
+        data = list(collection.aggregate(pipeline))
+        data_2 = list(collection_2.aggregate(pipeline))
+        all_data.extend(data)
+        all_data.extend(data_2)
+    #print("這個是data:",list(data))
+    return all_data
 
 
 def calculate_keywords(keywords_list):
