@@ -55,7 +55,7 @@ def choose_ptt_data(news_type,news_list):
     #password = 'mysqluser'
     host = '127.0.0.1'
     user = 'root'
-    password = '109403502'
+    password = 'Jeter#622019'
     database = 'communews'
     charset =  "utf8mb4"
         
