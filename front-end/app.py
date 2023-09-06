@@ -27,7 +27,7 @@ def connect_db():
             "host": "127.0.0.1",
             "port": 3306,
             "user": "root",
-            "password": "109403502",
+            "password": "Jeter#622019",
             "db": "communews",
             "charset": "utf8mb4",
             "cursorclass": pymysql.cursors.DictCursor
@@ -206,22 +206,28 @@ def record_view(request):
 def keyword_compare(user_id,json_news_keyword,mutiple_rate):
     mysql_db = connect_db()
     cursor = mysql_db.cursor()
-    query = "SELECT * FROM tb_user_keyword_weight WHERE id_user = %s"
+    query = "SELECT * FROM tb_user_keyword_weight WHERE id_user = %s" # 抓取使用者的關鍵字字典
     cursor.execute(query,(user_id))
     result = cursor.fetchone()
-    user_keyword_weight = json.loads(result['keyword_list']) # user 看過新聞的所有關鍵字 型態為dictionary
-    user_keyword_weight = calculate_keyword_weight(user_keyword_weight,json_news_keyword,mutiple_rate)
-    json_user_keyword_weight = json.dumps(user_keyword_weight)
-    # 更新使用者關鍵字字典
-    query = "UPDATE tb_user_keyword_weight SET keyword_list = %s WHERE id_user = %s"
-    cursor.execute(query,(json_user_keyword_weight,user_id))
-    mysql_db.commit()
+    print(result)
+    if result['keyword_list'] is None:
+        query = "UPDATE tb_user_keyword_weight SET keyword_list = %s WHERE id_user = %s"
+        cursor.execute(query,(json_news_keyword,user_id))
+        mysql_db.commit()
+    else:    
+        user_keyword_weight = json.loads(result['keyword_list']) # user 看過新聞的所有關鍵字 型態為dictionary
+        user_keyword_weight = calculate_keyword_weight(user_keyword_weight,json_news_keyword,mutiple_rate)
+        json_user_keyword_weight = json.dumps(user_keyword_weight)
+        # 更新使用者關鍵字字典
+        query = "UPDATE tb_user_keyword_weight SET keyword_list = %s WHERE id_user = %s"
+        cursor.execute(query,(json_user_keyword_weight,user_id))
+        mysql_db.commit()
     
         
 def calculate_keyword_weight(user_keyword_weight,json_news_keyword,mutiple_rate):
     news_keyword_weight = json.loads(json_news_keyword) # dict type
 
-    user_keywords = list(user_keyword_weight.keys()) # 使用者關鍵字list (沒有權重)
+    user_keywords = list(user_keyword_weight.keys()) # 使用者關鍵字list (沒有權重
     news_keywords = list(news_keyword_weight.keys()) # 新聞關鍵字list (沒有權重)
 
     common_keywords = set(user_keywords) & set(news_keywords) # 使用者有看過且該新聞也有的關鍵字
@@ -343,17 +349,19 @@ def register():
         password_hash = generate_password_hash(input_password)
 
         # 执行插入操作
-        query = "INSERT INTO tb_user (email, password) VALUES (%s, %s)"
+        query = "INSERT INTO tb_user (email, password) VALUES (%s, %s);"
         cursor.execute(query, (input_email, password_hash))
         db.commit()
 
         # 創建user的keyword_weight_list
         # 先抓id_user
-        query = "SELECT LAST_INSERT_ID()"
+        query = "SELECT LAST_INSERT_ID(id_user) from tb_user order by LAST_INSERT_ID(id_user) desc limit 1;"
         cursor.execute(query)
-        id_user = cursor.fetchone()
-        query = "INSERT INTO tb_user_keyword_weight (id_user,keyword_list) VALUES (%s,%s)"
-        cursor.execute(query,(id_user,'NULL'))
+        result = cursor.fetchone()
+        id_user = result['LAST_INSERT_ID(id_user)']
+        query = "INSERT INTO tb_user_keyword_weight (id_user) VALUES (%s);"
+        cursor.execute(query,(id_user))
+        db.commit()
 
         flash("Thank you for registering.")
         return redirect(url_for('login'))
@@ -441,7 +449,7 @@ def hot():
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
             elif action == 'view':
-                record_view(request,'當日熱門')
+                record_view(request)
                 return jsonify({'message': '觀看成功'})
     else:
         # 在其他情況下也要處理返回有效的回應
@@ -534,7 +542,7 @@ def everymonth():
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
             elif action == 'view':
-                record_view(request,'當月熱門')
+                record_view(request)
                 return jsonify({'message': '觀看成功'})
     else:
         # 在其他情況下也要處理返回有效的回應
@@ -578,7 +586,7 @@ def topic(topicname):
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
             elif action == 'view':
-                record_view(request,'最新')
+                record_view(request)
                 return jsonify({'message': '觀看成功'})
  
 
@@ -622,7 +630,7 @@ def topicHot(topicname):
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
             elif action == 'view':
-                record_view(request,'當日熱門')
+                record_view(request)
                 return jsonify({'message': '觀看成功'})
 
     else:
@@ -668,7 +676,7 @@ def topic_hot_week(topicname):
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
             elif action == 'view':
-                record_view(request,'當週熱門')
+                record_view(request)
                 return jsonify({'message': '觀看成功'})
 
     else:
@@ -714,7 +722,7 @@ def topic_hot_month(topicname):
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
             elif action == 'view':
-                record_view(request,'當月熱門')
+                record_view(request)
                 return jsonify({'message': '觀看成功'})
 
     else:
@@ -817,6 +825,9 @@ def collection(keyword):
             elif action =='rating':
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
+            elif action == 'view':
+                record_view(request)
+                return jsonify({'message':"觀看成功"})
  
 @app.route("/show",  methods=['POST'])
 def show():
@@ -835,6 +846,9 @@ def show():
                 elif action == 'rating':
                     do_rating(request)
                     return jsonify({'message': "評分成功"})
+                elif action == 'view':
+                    record_view(request)
+                    return jsonify({'message':"觀看成功"})
             else:
                 combined_data = {}
                 keyword = request.form.get("keyword", "")
@@ -971,6 +985,9 @@ def hashtag(type,keyword,topicname):
             elif action =='rating':
                 do_rating(request)
                 return jsonify({'message': "評分成功"})
+            elif action == 'view':
+                record_view(request)
+                return jsonify({'message':"觀看成功"})
 @app.route("/logout")
 @login_required
 def logout():
